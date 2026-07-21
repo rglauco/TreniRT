@@ -59,7 +59,9 @@ object ViaggiaTrenoApi {
     }
 
     // --- Train search (pipe-separated) ---
-    data class TrainSuggestion(val number: String, val originCode: String, val originName: String)
+    // referenceDay is the midnight timestamp ViaggiaTreno associates with this specific run —
+    // needed by andamentoTreno since the same train number recurs daily.
+    data class TrainSuggestion(val number: String, val originCode: String, val originName: String, val referenceDay: Long = 0L)
 
     fun searchTrain(number: String): List<TrainSuggestion> {
         val body = getOrNull("cercaNumeroTrenoTrenoAutocomplete/${enc(number)}") ?: return emptyList()
@@ -71,7 +73,8 @@ object ViaggiaTrenoApi {
                 val metaParts = meta.split("-")
                 val trainNum = metaParts.getOrNull(0)?.trim() ?: ""
                 val originCode = metaParts.getOrNull(1)?.trim() ?: ""
-                TrainSuggestion(number = trainNum, originCode = originCode, originName = label)
+                val referenceDay = metaParts.getOrNull(2)?.trim()?.toLongOrNull() ?: 0L
+                TrainSuggestion(number = trainNum, originCode = originCode, originName = label, referenceDay = referenceDay)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing train search", e)
@@ -161,9 +164,11 @@ object ViaggiaTrenoApi {
         val binarioProgrammatoArrivoDescrizione: String? = null
     )
 
-    fun getTrainDetail(originCode: String, trainNumber: Int): TrainDetail? {
-        val midnight = todayMidnightTs()
-        val body = get("andamentoTreno/$originCode/$trainNumber/$midnight") ?: return null
+    /** [referenceDay] must be the midnight (ms) of the specific day this train instance runs —
+     *  the same train number recurs daily, so andamentoTreno needs it to disambiguate which
+     *  run's live data to return. Defaults to today for calls that have no better information. */
+    fun getTrainDetail(originCode: String, trainNumber: Int, referenceDay: Long = todayMidnightTs()): TrainDetail? {
+        val body = get("andamentoTreno/$originCode/$trainNumber/$referenceDay") ?: return null
         return gson.fromJson(body, TrainDetail::class.java)
     }
 
@@ -173,7 +178,7 @@ object ViaggiaTrenoApi {
     // a literal '+' is NOT decoded back to a space by the server. Fix up to proper %20 escaping.
     private fun enc(s: String) = URLEncoder.encode(s, "UTF-8").replace("+", "%20")
 
-    private fun todayMidnightTs(): Long {
+    fun todayMidnightTs(): Long {
         val cal = java.util.Calendar.getInstance(TimeZone.getTimeZone("Europe/Rome"))
         cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
         cal.set(java.util.Calendar.MINUTE, 0)

@@ -45,6 +45,9 @@ data class UiState(
     val stationTrains: List<ViaggiaTrenoApi.StationTrain> = emptyList(),
     val filter: StationListFilter = StationListFilter.DEPARTURES,
     val timeOverride: Date? = null,
+    // The date actually used for the currently-shown board — differs from timeOverride when the
+    // "past time -> tomorrow" fallback kicked in. Pagination anchors off this, not timeOverride.
+    val effectiveBoardDate: Date? = null,
     val isLoading: Boolean = false,
     val trainQuery: String = "",
     val trainSuggestions: List<ViaggiaTrenoApi.TrainSuggestion> = emptyList(),
@@ -64,17 +67,27 @@ data class UiState(
     val stopMatchedTrains: List<ViaggiaTrenoApi.StationTrain>? = null,
     // Connection details for entries in stopMatchedTrains that require a change of train, keyed by numeroTreno
     val connectionInfo: Map<Int, TrainConnection> = emptyMap(),
+    // True when we couldn't fetch stop data for any candidate (ViaggiaTreno has no live data
+    // for trains that far in the future — typically a schedule for a following day). In that
+    // case we fall back to showing the raw, unverified board instead of an empty list.
+    val stopVerificationUnavailable: Boolean = false,
+    val isLoadingMore: Boolean = false,
     // Most-recently-used origin/destination pairs, newest first
     val recentTrips: List<RecentTrip> = emptyList(),
     // Most-recently-searched train numbers, newest first
     val recentTrains: List<ViaggiaTrenoApi.TrainSuggestion> = emptyList(),
     // Identifies the train currently shown in the detail screen, so it can be refreshed
     val currentTrainOriginCode: String? = null,
-    val currentTrainNumber: Int? = null
+    val currentTrainNumber: Int? = null,
+    val currentTrainReferenceDay: Long = 0L
 ) {
     /** What the list should actually show right now. */
     val displayedTrains: List<ViaggiaTrenoApi.StationTrain>
-        get() = if (selectedDestination != null) stopMatchedTrains ?: emptyList() else stationTrains
+        get() = when {
+            selectedDestination == null -> stationTrains
+            stopVerificationUnavailable && stopMatchedTrains.isNullOrEmpty() -> stationTrains
+            else -> stopMatchedTrains ?: emptyList()
+        }
 }
 
 private fun stationNamesMatch(trainField: String?, target: String): Boolean {
@@ -83,6 +96,14 @@ private fun stationNamesMatch(trainField: String?, target: String): Boolean {
     val b = target.trim().uppercase(Locale.ITALIAN)
     return a == b || a.contains(b) || b.contains(a)
 }
+
+// The same train number recurs daily, so andamentoTreno needs the specific run's midnight to
+// disambiguate — fall back to today only if the API genuinely didn't give us one.
+private fun ViaggiaTrenoApi.StationTrain.resolvedReferenceDay(): Long =
+    dataPartenzaTreno.takeIf { it > 0 } ?: ViaggiaTrenoApi.todayMidnightTs()
+
+private fun ViaggiaTrenoApi.TrainSuggestion.resolvedReferenceDay(): Long =
+    referenceDay.takeIf { it > 0 } ?: ViaggiaTrenoApi.todayMidnightTs()
 
 class TreniViewModel(app: Application) : AndroidViewModel(app) {
     companion object {
@@ -155,7 +176,8 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             showDetail = false,
             mode = "station",
             stopMatchedTrains = null,
-            connectionInfo = emptyMap()
+            connectionInfo = emptyMap(),
+            stopVerificationUnavailable = false
         )
         loadStationTrains()
         recordRecentTrip(trip.origin, trip.destination)
@@ -175,6 +197,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             destinationSuggestions = emptyList(),
             stopMatchedTrains = null,
             connectionInfo = emptyMap(),
+            stopVerificationUnavailable = false,
             showDetail = false
         )
         loadStationTrains()
@@ -215,6 +238,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             selectedDestination = null,
             stopMatchedTrains = null,
             connectionInfo = emptyMap(),
+            stopVerificationUnavailable = false,
             isCheckingStops = false
         )
         loadStationTrains()
@@ -227,7 +251,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             selectedStation = null, stationQuery = "", stationSuggestions = emptyList(),
             stationTrains = emptyList(), error = null,
             selectedDestination = null, destinationQuery = "", destinationSuggestions = emptyList(),
-            stopMatchedTrains = null, connectionInfo = emptyMap(), isCheckingStops = false
+            stopMatchedTrains = null, connectionInfo = emptyMap(), stopVerificationUnavailable = false, isCheckingStops = false
         )
     }
 
@@ -275,7 +299,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         stopCheckJob?.cancel()
         _state.value = _state.value.copy(
             selectedDestination = null, destinationQuery = "", destinationSuggestions = emptyList(),
-            stopMatchedTrains = null, connectionInfo = emptyMap(), isCheckingStops = false
+            stopMatchedTrains = null, connectionInfo = emptyMap(), stopVerificationUnavailable = false, isCheckingStops = false
         )
     }
 
@@ -292,46 +316,98 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         val time = _state.value.timeOverride
         stopCheckJob?.cancel()
         if (trains.isEmpty()) {
-            _state.value = _state.value.copy(stopMatchedTrains = emptyList(), isCheckingStops = false, connectionInfo = emptyMap())
+            _state.value = _state.value.copy(
+                stopMatchedTrains = emptyList(), isCheckingStops = false,
+                connectionInfo = emptyMap(), stopVerificationUnavailable = false
+            )
             return
         }
-        _state.value = _state.value.copy(isCheckingStops = true, stopMatchedTrains = null, connectionInfo = emptyMap())
+        _state.value = _state.value.copy(
+            isCheckingStops = true, stopMatchedTrains = null,
+            connectionInfo = emptyMap(), stopVerificationUnavailable = false
+        )
         stopCheckJob = viewModelScope.launch(Dispatchers.IO) {
-            // Trains whose listed terminus already matches need no detail fetch at all.
-            val (quickMatched, needsDetail) = trains.partition { train ->
-                val terminus = if (listFilter == StationListFilter.DEPARTURES) train.destinazione else train.origine
-                stationNamesMatch(terminus, dest.name)
-            }
-            val candidateStops = fetchStopsFor(needsDetail)
-            val directNumbers = candidateStops.filter { (_, stops) -> stopIsReachable(stops, origin, dest, listFilter) }
-                .map { it.first.numeroTreno }.toSet()
-            val unresolved = candidateStops.filter { it.first.numeroTreno !in directNumbers }
-
-            val matched = (quickMatched + candidateStops.filter { it.first.numeroTreno in directNumbers }.map { it.first }).toMutableList()
-            val connections = mutableMapOf<Int, TrainConnection>()
-
-            if (unresolved.isNotEmpty()) {
-                val connectingBoard = try {
-                    if (listFilter == StationListFilter.DEPARTURES) ViaggiaTrenoApi.getArrivals(dest.code, time)
-                    else ViaggiaTrenoApi.getDepartures(dest.code, time)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error fetching connecting board at ${dest.name}", e)
-                    emptyList()
-                }
-                val connectingStops = fetchStopsFor(connectingBoard)
-                for ((train, oStops) in unresolved) {
-                    val connection = findConnection(oStops, origin, dest, listFilter, connectingStops)
-                    if (connection != null) {
-                        matched.add(train)
-                        connections[train.numeroTreno] = connection
-                    }
-                }
-            }
-
+            val result = verifyCandidates(trains, origin, dest, listFilter, time)
             if (_state.value.selectedDestination == dest) {
-                _state.value = _state.value.copy(stopMatchedTrains = matched, connectionInfo = connections, isCheckingStops = false)
+                _state.value = _state.value.copy(
+                    stopMatchedTrains = result.matched,
+                    connectionInfo = result.connections,
+                    isCheckingStops = false,
+                    stopVerificationUnavailable = result.verificationUnavailable
+                )
             }
         }
+    }
+
+    /** Same verification as [refreshStopCheck] but for a batch of newly paged-in trains, merging
+     *  the result into what's already been verified instead of recomputing everything. */
+    private fun appendStopCheck(newTrains: List<ViaggiaTrenoApi.StationTrain>) {
+        val dest = _state.value.selectedDestination ?: return
+        val origin = _state.value.selectedStation ?: return
+        val listFilter = _state.value.filter
+        val time = _state.value.timeOverride
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = verifyCandidates(newTrains, origin, dest, listFilter, time)
+            if (_state.value.selectedDestination == dest) {
+                _state.value = _state.value.copy(
+                    stopMatchedTrains = (_state.value.stopMatchedTrains ?: emptyList()) + result.matched,
+                    connectionInfo = _state.value.connectionInfo + result.connections,
+                    stopVerificationUnavailable = _state.value.stopVerificationUnavailable || result.verificationUnavailable
+                )
+            }
+        }
+    }
+
+    private class VerifyResult(
+        val matched: List<ViaggiaTrenoApi.StationTrain>,
+        val connections: Map<Int, TrainConnection>,
+        val verificationUnavailable: Boolean
+    )
+
+    private suspend fun verifyCandidates(
+        candidates: List<ViaggiaTrenoApi.StationTrain>,
+        origin: ViaggiaTrenoApi.StationSuggestion,
+        dest: ViaggiaTrenoApi.StationSuggestion,
+        listFilter: StationListFilter,
+        time: Date?
+    ): VerifyResult {
+        // Trains whose listed terminus already matches need no detail fetch at all.
+        val (quickMatched, needsDetail) = candidates.partition { train ->
+            val terminus = if (listFilter == StationListFilter.DEPARTURES) train.destinazione else train.origine
+            stationNamesMatch(terminus, dest.name)
+        }
+        val candidateStops = fetchStopsFor(needsDetail)
+        val directNumbers = candidateStops.filter { (_, stops) -> stopIsReachable(stops, origin, dest, listFilter) }
+            .map { it.first.numeroTreno }.toSet()
+        val unresolved = candidateStops.filter { it.first.numeroTreno !in directNumbers }
+
+        val matched = (quickMatched + candidateStops.filter { it.first.numeroTreno in directNumbers }.map { it.first }).toMutableList()
+        val connections = mutableMapOf<Int, TrainConnection>()
+
+        if (unresolved.isNotEmpty()) {
+            val connectingBoard = try {
+                if (listFilter == StationListFilter.DEPARTURES) ViaggiaTrenoApi.getArrivals(dest.code, time)
+                else ViaggiaTrenoApi.getDepartures(dest.code, time)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching connecting board at ${dest.name}", e)
+                emptyList()
+            }
+            val connectingStops = fetchStopsFor(connectingBoard)
+            for ((train, oStops) in unresolved) {
+                val connection = findConnection(oStops, origin, dest, listFilter, connectingStops)
+                if (connection != null) {
+                    matched.add(train)
+                    connections[train.numeroTreno] = connection
+                }
+            }
+        }
+
+        // ViaggiaTreno only activates live data for a train shortly before/during its run, so
+        // when checking a future schedule (e.g. the "past time -> tomorrow" fallback) almost
+        // everything 204s. A rare early activation shouldn't count as "verification worked" —
+        // treat it as unavailable unless most candidates actually resolved.
+        val verificationUnavailable = needsDetail.size >= 3 && candidateStops.size < needsDetail.size / 3
+        return VerifyResult(matched, connections, verificationUnavailable)
     }
 
     /** Fetches full stop lists for a batch of trains concurrently, dropping any that fail. */
@@ -342,7 +418,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             async {
                 val stops = stopCheckSemaphore.withPermit {
                     try {
-                        ViaggiaTrenoApi.getTrainDetail(train.codOrigine, train.numeroTreno)?.fermate
+                        ViaggiaTrenoApi.getTrainDetail(train.codOrigine, train.numeroTreno, train.resolvedReferenceDay())?.fermate
                     } catch (e: Exception) {
                         Log.e(TAG, "Error fetching stops for train ${train.numeroTreno}", e)
                         null
@@ -438,12 +514,14 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                     _state.value = _state.value.copy(
                         stationTrains = trainsTomorrow,
                         isLoading = false,
+                        effectiveBoardDate = tomorrow,
                         error = if (trainsTomorrow.isEmpty()) "Nessun treno trovato" else "Orario nel passato — orari di domani"
                     )
                 } else {
                     _state.value = _state.value.copy(
                         stationTrains = trains,
                         isLoading = false,
+                        effectiveBoardDate = time ?: Date(),
                         error = if (trains.isEmpty()) "Nessun treno trovato" else null
                     )
                 }
@@ -453,6 +531,54 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                 _state.value = _state.value.copy(isLoading = false, error = "Errore di caricamento")
             }
         }
+    }
+
+    /** Loads the next batch of trains past the last one currently shown — called as the user
+     *  scrolls near the end of the list, so later solutions (including connections) surface too. */
+    fun loadMoreTrains() {
+        val station = _state.value.selectedStation ?: return
+        if (_state.value.isLoading || _state.value.isLoadingMore) return
+        val trains = _state.value.stationTrains
+        val last = trains.lastOrNull() ?: return
+        val filter = _state.value.filter
+        val lastTimeStr = if (filter == StationListFilter.DEPARTURES) last.compOrarioPartenza else last.compOrarioArrivo
+        val referenceDate = _state.value.effectiveBoardDate ?: Date()
+        val nextAnchor = nextAnchorFrom(lastTimeStr, referenceDate) ?: return
+
+        _state.value = _state.value.copy(isLoadingMore = true)
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val more = if (filter == StationListFilter.DEPARTURES)
+                    ViaggiaTrenoApi.getDepartures(station.code, nextAnchor)
+                else
+                    ViaggiaTrenoApi.getArrivals(station.code, nextAnchor)
+                val existingKeys = trains.map { it.numeroTreno to it.codOrigine }.toSet()
+                val newOnes = more.filter { (it.numeroTreno to it.codOrigine) !in existingKeys }
+                _state.value = _state.value.copy(stationTrains = trains + newOnes, isLoadingMore = false)
+                if (_state.value.selectedDestination != null && newOnes.isNotEmpty()) {
+                    appendStopCheck(newOnes)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading more trains", e)
+                _state.value = _state.value.copy(isLoadingMore = false)
+            }
+        }
+    }
+
+    /** One minute past the last-shown train's time, on the same day it was fetched for. */
+    private fun nextAnchorFrom(hhmm: String?, referenceDate: Date): Date? {
+        if (hhmm.isNullOrBlank()) return null
+        val parts = hhmm.split(":")
+        if (parts.size != 2) return null
+        val h = parts[0].toIntOrNull() ?: return null
+        val m = parts[1].toIntOrNull() ?: return null
+        val cal = Calendar.getInstance(TimeZone.getTimeZone("Europe/Rome"))
+        cal.time = referenceDate
+        cal.set(Calendar.HOUR_OF_DAY, h)
+        cal.set(Calendar.MINUTE, m)
+        cal.set(Calendar.SECOND, 0)
+        cal.add(Calendar.MINUTE, 1)
+        return cal.time
     }
 
     // --- Train ---
@@ -479,10 +605,12 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val num = suggestion.number.toIntOrNull() ?: return@launch
-                val detail = ViaggiaTrenoApi.getTrainDetail(suggestion.originCode, num)
+                val referenceDay = suggestion.resolvedReferenceDay()
+                val detail = ViaggiaTrenoApi.getTrainDetail(suggestion.originCode, num, referenceDay)
                 _state.value = _state.value.copy(
                     trainDetail = detail, isLoading = false, showDetail = true,
-                    currentTrainOriginCode = suggestion.originCode, currentTrainNumber = num
+                    currentTrainOriginCode = suggestion.originCode, currentTrainNumber = num,
+                    currentTrainReferenceDay = referenceDay
                 )
                 recordRecentTrain(suggestion)
             } catch (e: Exception) {
@@ -492,14 +620,16 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun loadTrainDetail(originCode: String, trainNumber: Int) {
+    fun loadTrainDetail(originCode: String, trainNumber: Int, referenceDay: Long) {
+        val effectiveDay = referenceDay.takeIf { it > 0 } ?: ViaggiaTrenoApi.todayMidnightTs()
         _state.value = _state.value.copy(isLoading = true, showDetail = false, mode = "station")
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val detail = ViaggiaTrenoApi.getTrainDetail(originCode, trainNumber)
+                val detail = ViaggiaTrenoApi.getTrainDetail(originCode, trainNumber, effectiveDay)
                 _state.value = _state.value.copy(
                     trainDetail = detail, showDetail = true, isLoading = false,
-                    currentTrainOriginCode = originCode, currentTrainNumber = trainNumber
+                    currentTrainOriginCode = originCode, currentTrainNumber = trainNumber,
+                    currentTrainReferenceDay = effectiveDay
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading train detail", e)
@@ -512,10 +642,11 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
     fun refreshTrainDetail() {
         val originCode = _state.value.currentTrainOriginCode ?: return
         val trainNumber = _state.value.currentTrainNumber ?: return
+        val referenceDay = _state.value.currentTrainReferenceDay
         _state.value = _state.value.copy(isLoading = true)
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val detail = ViaggiaTrenoApi.getTrainDetail(originCode, trainNumber)
+                val detail = ViaggiaTrenoApi.getTrainDetail(originCode, trainNumber, referenceDay)
                 _state.value = _state.value.copy(trainDetail = detail, isLoading = false)
             } catch (e: Exception) {
                 Log.e(TAG, "Error refreshing train detail", e)

@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -236,16 +237,32 @@ fun StationSearchTab(state: UiState, vm: TreniViewModel) {
             Spacer(modifier = Modifier.width(8.dp))
             Text("Verifica fermate...", color = C.muted, fontSize = 13.sp)
         }
-    } else if (state.selectedDestination != null && state.displayedTrains.isEmpty()) {
+    } else if (state.selectedDestination != null && state.displayedTrains.isEmpty() && !state.stopVerificationUnavailable) {
         Text("Nessun treno, nemmeno con cambio, per ${state.selectedDestination.name}", color = C.orange, modifier = Modifier.padding(16.dp))
     } else {
         if (state.error != null) {
             Text(state.error!!, color = C.orange, fontSize = 12.sp)
         }
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
+        if (state.selectedDestination != null && state.stopVerificationUnavailable) {
+            Text(
+                "⚠️ Non riesco a verificare le fermate per questo orario (dati non ancora disponibili) — " +
+                    "ecco tutti i treni, controlla tu quali fermano a ${state.selectedDestination.name}",
+                color = C.orange, fontSize = 11.sp, modifier = Modifier.padding(bottom = 4.dp)
+            )
+        }
+        val listState = rememberLazyListState()
+        LaunchedEffect(listState, state.displayedTrains.size, state.selectedStation) {
+            snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+                .collect { lastVisible ->
+                    if (lastVisible != null && state.displayedTrains.isNotEmpty() && lastVisible >= state.displayedTrains.size - 3) {
+                        vm.loadMoreTrains()
+                    }
+                }
+        }
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             items(state.displayedTrains) { train ->
                 Column {
-                    TrainCard(train) { vm.loadTrainDetail(train.codOrigine, train.numeroTreno) }
+                    TrainCard(train) { vm.loadTrainDetail(train.codOrigine, train.numeroTreno, train.dataPartenzaTreno) }
                     state.connectionInfo[train.numeroTreno]?.let { conn ->
                         val sdf = SimpleDateFormat("HH:mm", Locale.ITALIAN)
                         Text(
@@ -254,6 +271,13 @@ fun StationSearchTab(state: UiState, vm: TreniViewModel) {
                             color = C.accent, fontSize = 11.sp,
                             modifier = Modifier.padding(start = 6.dp, bottom = 6.dp)
                         )
+                    }
+                }
+            }
+            if (state.isLoadingMore) {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = C.accent, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     }
                 }
             }
