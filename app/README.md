@@ -5,8 +5,13 @@ App web minimalista per consultare lo stato dei treni italiani in tempo reale, u
 ## Funzionalità
 
 - **Ricerca per stazione**: autocompletamento del nome, elenco partenze/arrivi con ritardo e binario
+- **Destinazione opzionale**: filtra i treni mostrando solo quelli che arrivano davvero a una seconda stazione indicata, anche con un cambio treno (l'app cerca automaticamente una coincidenza a una fermata intermedia)
+- **Inverti partenza/destinazione** con un tocco
+- **Ricerche recenti**: le ultime 10 coppie partenza→destinazione e le ultime 10 ricerche per numero treno, salvate nel browser (localStorage) come scorciatoie
+- **Scroll infinito**: caricamento automatico degli orari successivi arrivando in fondo alla lista
 - **Ricerca per numero treno**: dettaglio completo con tutte le fermate, ritardo per ogni stazione, posizione del treno
-- **Auto-refresh**: aggiornamento automatico ogni 60 secondi
+- **Refresh manuale**: pulsante per aggiornare la lista treni o il dettaglio treno senza ridigitare la ricerca
+- **Auto-refresh**: aggiornamento automatico ogni 60 secondi (sospeso mentre si guarda il dettaglio di un treno)
 - **PWA installabile**: aggiungi alla home su Android per usarla come app
 
 ## Avvio rapido

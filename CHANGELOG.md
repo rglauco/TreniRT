@@ -1,0 +1,30 @@
+# Changelog
+
+Tutte le modifiche rilevanti al progetto TreniRT (app Android + web/PWA).
+
+## 2026-07-21
+
+### Corretto
+- **Crash all'avvio della ricerca** (stazione o numero treno): la Compose BOM `2024.01.00` fissava `material3` alla versione `1.1.2` mentre le altre librerie Compose andavano alla `1.6.0` — incompatibilità binaria tra le due. Aggiornata la BOM a `2024.02.00`, dove le versioni sono di nuovo allineate.
+- **"Nessun treno trovato" fuorviante**: gli errori di rete venivano ingoiati silenziosamente e mostrati come "nessun treno" invece di un errore reale. Ora la UI distingue i due casi.
+- **Partenze/arrivi sempre falliti**: `java.net.URLEncoder` codifica gli spazi come `+`, valido solo nelle query string — ma il valore veniva inserito in un segmento di path URL, dove il server non lo reinterpreta come spazio. L'orario passato all'API arrivava quindi corrotto, causando sempre un errore dal server. Corretta la codifica a `%20`.
+- **Filtro destinazione impreciso**: contava come "raggiungibile" anche una fermata del treno avvenuta *prima* della stazione di partenza nel suo percorso (es. un treno che passa da una città, poi arriva alla tua stazione, poi prosegue altrove) — ora l'ordine delle fermate viene verificato correttamente rispetto alla direzione di marcia.
+- **Dati del giorno sbagliato**: le richieste di dettaglio treno (`andamentoTreno`) usavano sempre la mezzanotte di "oggi" come riferimento, anche quando si stava consultando l'orario di "domani" (fallback per orari già passati). Se lo stesso numero treno circolava anche oggi, l'app mostrava dati di oggi spacciati per quelli di domani. Ora si usa il giorno di riferimento specifico che l'API fornisce per ciascun treno (`dataPartenzaTreno`).
+- **Messaggio "nessun treno" quando in realtà i dati non erano ancora disponibili**: ViaggiaTreno non ha dati "live" per corse future non ancora attive nel sistema (tipicamente quelle di domani, prima che inizi la giornata). In questo caso l'app ora mostra un avviso chiaro e l'elenco completo non verificato, invece di affermare erroneamente che non ci sono soluzioni.
+
+### Aggiunto
+- **Filtro per stazione di destinazione** (opzionale): oltre a cercare per stazione di partenza, si può indicare anche una destinazione — l'elenco mostra solo i treni che effettivamente ci arrivano.
+- **Ricerca con un cambio treno**: se nessun treno diretto raggiunge la destinazione, l'app cerca automaticamente una coincidenza a una fermata intermedia, mostrando stazione di cambio, orari e treno di proseguimento.
+- **Pulsante "Inverti partenza/destinazione"**: scambia le due stazioni in un tocco.
+- **Cronologia ricerche**: le ultime 10 coppie partenza→destinazione e le ultime 10 ricerche per numero treno vengono salvate e proposte come scorciatoie rapide.
+- **Time picker a rotellina** (solo Android; il web usa il selettore orario nativo del browser) al posto della digitazione manuale dell'orario.
+- **Refresh manuale**: pulsante per aggiornare la lista treni per stazione e il dettaglio treno (con fermate) senza dover ridigitare la ricerca.
+- **Scroll infinito**: arrivando in fondo alla lista treni, vengono caricati automaticamente gli orari successivi.
+- **Numero di versione visibile in app**, per sapere sempre quale build si sta usando (Android: v1.3.0 nella barra superiore).
+- **Pulsante "X"** per cancellare rapidamente il campo stazione di partenza (già presente per la destinazione).
+- Repository GitHub (privato) con `.gitignore` per Python e Android/Kotlin/Gradle.
+
+## Versioni Android
+- v1.0 → v1.1.0: filtro destinazione, time picker, cronologia ricerche, refresh, fix vari.
+- v1.1.0 → v1.2.0: ricerca con cambio treno, scroll infinito.
+- v1.2.0 → v1.3.0: fix del bug sul giorno di riferimento, messaggio di verifica-non-disponibile.
