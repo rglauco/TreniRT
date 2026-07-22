@@ -10,6 +10,13 @@ Tutte le modifiche rilevanti al progetto TreniRT (app Android + web/PWA).
 - **"In orario" mostrato per treni non ancora partiti**: l'etichetta si basava solo sul campo ritardo, che vale 0 sia per "confermato in orario" sia per "nessuna informazione perché non è ancora partito". Ora si confronta l'orario schedulato con l'ora reale attuale: se il treno non ha ancora raggiunto il proprio orario, viene mostrato "Non partito" invece di "In orario".
 - **Spinner di caricamento bloccato in loop infinito**: lo scroll infinito si autoattivava senza sosta quando la lista visibile era molto corta (es. un solo treno, come nel fallback "dati non ancora disponibili") — la condizione "vicino al fondo della lista" era sempre vera con pochi elementi, quindi il caricamento successivo scattava di continuo. Aggiunto un flag che ferma i tentativi automatici non appena una richiesta non trova più treni nuovi da aggiungere.
 
+### Nota — limite noto: ricerca per stazione vs. ricerca per numero treno
+Cercando un treno per **numero** (`andamentoTreno`), ViaggiaTreno restituisce il suo record completo con tutte le fermate per l'intera giornata, consultabile in qualsiasi momento dopo — che sia partito 5 minuti o 8 ore fa. Non è una finestra scorrevole: è uno storico persistente legato a quel singolo treno.
+
+La ricerca per **stazione** (`partenze`/`arrivi`) è invece una vera lavagna live, ancorata all'orologio reale del server: mostra solo una finestra scorrevole di treni intorno all'istante attuale e, oltre un certo margine (circa 2 ore), risponde vuota qualunque orario passato si richieda (verificato con richieste dirette all'API). **Non esiste alcun endpoint di ViaggiaTreno che permetta di consultare lo storico delle partenze/arrivi di una stazione** — quel dato, una volta uscito dalla finestra live, non è recuperabile in alcun modo, nemmeno incrociando altre chiamate.
+
+Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già visto** quei treni con una richiesta live precedente nella stessa sessione (es. con "Adesso"): in tal caso li tiene in memoria invece di farli sparire. Se invece si chiede direttamente un orario passato senza che l'app abbia mai interrogato quella fascia oraria mentre era ancora "viva" (es. subito dopo l'apertura dell'app), non c'è nulla da recuperare, e l'app mostra correttamente il fallback "orario nel passato — orari di domani". È un limite strutturale della fonte dati, non risolvibile lato client.
+
 ## 2026-07-21
 
 ### Corretto
