@@ -63,6 +63,24 @@ fun delayColor(delay: Int): Color = when {
     else -> C.green
 }
 
+/** [schedHHmm]'s instant on the day identified by [referenceDayMs] (its own midnight, ms) —
+ *  used to tell "hasn't reached its scheduled time yet" apart from "confirmed on time", since
+ *  a delay of 0 means either depending on whether the train has actually run yet. */
+fun scheduledInstant(schedHHmm: String?, referenceDayMs: Long): Date? {
+    if (schedHHmm.isNullOrBlank()) return null
+    val parts = schedHHmm.split(":")
+    if (parts.size != 2) return null
+    val h = parts[0].toIntOrNull() ?: return null
+    val m = parts[1].toIntOrNull() ?: return null
+    val cal = Calendar.getInstance(TimeZone.getTimeZone("Europe/Rome"))
+    if (referenceDayMs > 0) cal.timeInMillis = referenceDayMs
+    cal.set(Calendar.HOUR_OF_DAY, h)
+    cal.set(Calendar.MINUTE, m)
+    cal.set(Calendar.SECOND, 0)
+    cal.set(Calendar.MILLISECOND, 0)
+    return cal.time
+}
+
 @Composable
 fun TreniRTApp(vm: TreniViewModel = viewModel()) {
     val state by vm.state.collectAsState()
@@ -88,7 +106,7 @@ fun TreniRTApp(vm: TreniViewModel = viewModel()) {
 
                 when {
                     state.showDetail && state.trainDetail != null -> {
-                        TrainDetailScreen(state.trainDetail!!, state.isLoading, vm::goBack, vm::refreshTrainDetail, vm::onStationClicked)
+                        TrainDetailScreen(state.trainDetail!!, state.currentTrainReferenceDay, state.isLoading, vm::goBack, vm::refreshTrainDetail, vm::onStationClicked)
                     }
                     state.mode == "train" -> {
                         TrainSearchTab(state, vm)
@@ -256,7 +274,8 @@ fun StationSearchTab(state: UiState, vm: TreniViewModel) {
             )
         }
         val listState = rememberLazyListState()
-        LaunchedEffect(listState, state.displayedTrains.size, state.selectedStation) {
+        LaunchedEffect(listState, state.displayedTrains.size, state.selectedStation, state.noMoreTrainsToLoad) {
+            if (state.noMoreTrainsToLoad) return@LaunchedEffect
             snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
                 .collect { lastVisible ->
                     if (lastVisible != null && state.displayedTrains.isNotEmpty() && lastVisible >= state.displayedTrains.size - 3) {
@@ -412,12 +431,6 @@ fun TrainCard(train: StationTrain, onClick: () -> Unit) {
     val isCancelled = train.provvedimento == 1
     val isPartialCancel = train.provvedimento == 2 || train.riprogrammazione == "Y"
     val delay = train.ritardo
-    val delayCol = delayColor(delay)
-    val delayText = when {
-        delay > 0 -> "+${delay}'"
-        delay < 0 -> "${delay}'"
-        else -> "In orario"
-    }
     val category = train.categoriaDescrizione.trim()
     val number = train.numeroTreno
     val label = if (category.isNotEmpty()) "$category $number" else "Treno $number"
@@ -425,6 +438,18 @@ fun TrainCard(train: StationTrain, onClick: () -> Unit) {
     val schedTime = train.compOrarioPartenza ?: train.compOrarioArrivo ?: "—"
     val realTime = train.compOrarioPartenzaZeroEffettivo ?: train.compOrarioArrivoZeroEffettivo
     val platform = train.binarioEffettivoPartenzaDescrizione ?: train.binarioEffettivoArrivoDescrizione
+    // delay == 0 is ambiguous: it means either "confirmed on time" or "hasn't run yet, so no
+    // delay info exists at all". Compare the scheduled time to the actual clock to tell them apart
+    // instead of defaulting to the (potentially false) "in orario" claim.
+    val notYetDue = !isCancelled && delay == 0 &&
+        scheduledInstant(schedTime, train.dataPartenzaTreno)?.after(Date()) == true
+    val delayCol = if (notYetDue) C.muted else delayColor(delay)
+    val delayText = when {
+        delay > 0 -> "+${delay}'"
+        delay < 0 -> "${delay}'"
+        notYetDue -> "Non partito"
+        else -> "In orario"
+    }
 
     Card(
         onClick = onClick,
@@ -469,10 +494,12 @@ fun TrainCard(train: StationTrain, onClick: () -> Unit) {
 // ── Train Detail ─────────────────────────────────────────────────────
 
 @Composable
-fun TrainDetailScreen(detail: TrainDetail, isLoading: Boolean, onBack: () -> Unit, onRefresh: () -> Unit, onStationClick: (String, String) -> Unit) {
+fun TrainDetailScreen(detail: TrainDetail, referenceDay: Long, isLoading: Boolean, onBack: () -> Unit, onRefresh: () -> Unit, onStationClick: (String, String) -> Unit) {
     val isCancelled = detail.provvedimento == 1
     val isPartialCancel = detail.provvedimento == 2
     val delay = detail.ritardo
+    val notYetDue = !isCancelled && delay == 0 &&
+        scheduledInstant(detail.compOrarioPartenza, referenceDay)?.after(Date()) == true
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -495,8 +522,13 @@ fun TrainDetailScreen(detail: TrainDetail, isLoading: Boolean, onBack: () -> Uni
             Text(detail.categoria, color = C.muted, fontSize = 13.sp)
             Text("${detail.origine} → ${detail.destinazione}", color = C.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Text(
-                if (delay == 0) "✅ In orario" else if (delay > 0) "⚠️ +$delay min" else "$delay min",
-                color = delayColor(delay), fontSize = 20.sp, fontWeight = FontWeight.Bold
+                when {
+                    notYetDue -> "🕐 Non ancora partito"
+                    delay == 0 -> "✅ In orario"
+                    delay > 0 -> "⚠️ +$delay min"
+                    else -> "$delay min"
+                },
+                color = if (notYetDue) C.muted else delayColor(delay), fontSize = 20.sp, fontWeight = FontWeight.Bold
             )
             if (isCancelled) Text("CANCELLATO", color = C.red, fontWeight = FontWeight.Bold)
             else if (isPartialCancel) Text("PARZIALMENTE CANCELLATO", color = C.orange, fontWeight = FontWeight.Bold)

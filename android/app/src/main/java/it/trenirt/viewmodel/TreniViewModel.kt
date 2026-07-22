@@ -72,6 +72,10 @@ data class UiState(
     // case we fall back to showing the raw, unverified board instead of an empty list.
     val stopVerificationUnavailable: Boolean = false,
     val isLoadingMore: Boolean = false,
+    // True once a loadMoreTrains() call comes back with nothing new — stops the UI from
+    // re-triggering pagination forever once the schedule for the day is exhausted (or, with a
+    // very short list, immediately — see loadMoreTrains()).
+    val noMoreTrainsToLoad: Boolean = false,
     // Most-recently-used origin/destination pairs, newest first
     val recentTrips: List<RecentTrip> = emptyList(),
     // Most-recently-searched train numbers, newest first
@@ -501,7 +505,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         val station = _state.value.selectedStation ?: return
         val filter = _state.value.filter
         val time = _state.value.timeOverride
-        _state.value = _state.value.copy(isLoading = true, error = null)
+        _state.value = _state.value.copy(isLoading = true, error = null, noMoreTrainsToLoad = false)
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -550,16 +554,26 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Loads the next batch of trains past the last one currently shown — called as the user
-     *  scrolls near the end of the list, so later solutions (including connections) surface too. */
+     *  scrolls near the end of the list, so later solutions (including connections) surface too.
+     *  Guarded by [UiState.noMoreTrainsToLoad]: the UI's scroll-triggered auto-load condition
+     *  ("near the bottom") is trivially satisfied forever by a short list (e.g. a 1-item fallback
+     *  board), so without this the same fetch would re-fire in a tight loop. Setting the flag the
+     *  first time a fetch yields nothing new — whether because the list was already exhaustive or
+     *  the day's schedule is genuinely exhausted — stops further attempts until the next fresh
+     *  [loadStationTrains] call (station/filter/time change or manual refresh) clears it. */
     fun loadMoreTrains() {
         val station = _state.value.selectedStation ?: return
-        if (_state.value.isLoading || _state.value.isLoadingMore) return
+        if (_state.value.isLoading || _state.value.isLoadingMore || _state.value.noMoreTrainsToLoad) return
         val trains = _state.value.stationTrains
         val last = trains.lastOrNull() ?: return
         val filter = _state.value.filter
         val lastTimeStr = if (filter == StationListFilter.DEPARTURES) last.compOrarioPartenza else last.compOrarioArrivo
         val referenceDate = _state.value.effectiveBoardDate ?: Date()
-        val nextAnchor = nextAnchorFrom(lastTimeStr, referenceDate) ?: return
+        val nextAnchor = nextAnchorFrom(lastTimeStr, referenceDate)
+        if (nextAnchor == null) {
+            _state.value = _state.value.copy(noMoreTrainsToLoad = true)
+            return
+        }
 
         _state.value = _state.value.copy(isLoadingMore = true)
         viewModelScope.launch(Dispatchers.IO) {
@@ -571,7 +585,11 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                 val existingKeys = trains.map { it.numeroTreno to it.codOrigine }.toSet()
                 val merged = mergeBoard(more, station.code, filter, referenceDate)
                 val newOnes = merged.filter { (it.numeroTreno to it.codOrigine) !in existingKeys }
-                _state.value = _state.value.copy(stationTrains = merged, isLoadingMore = false)
+                _state.value = _state.value.copy(
+                    stationTrains = merged,
+                    isLoadingMore = false,
+                    noMoreTrainsToLoad = newOnes.isEmpty()
+                )
                 if (_state.value.selectedDestination != null && newOnes.isNotEmpty()) {
                     appendStopCheck(newOnes)
                 }

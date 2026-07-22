@@ -7,6 +7,8 @@ Tutte le modifiche rilevanti al progetto TreniRT (app Android + web/PWA).
 ### Corretto
 - **Tasto indietro hardware/gesture usciva sempre dall'app**, anche quando si stava guardando il dettaglio di un treno (con le fermate) — invece di tornare alla lista precedente come fa il pulsante "← Indietro" in app. Ora il tasto indietro di sistema si comporta come quel pulsante quando si è nel dettaglio treno.
 - **I treni già partiti sparivano dalla lista partenze/arrivi** se si richiedeva di nuovo la stessa stazione con un orario precedente. Causa: l'endpoint di ViaggiaTreno per partenze/arrivi è una "lavagna live" ancorata all'orologio reale del server — non conserva alcuno storico, e oltre un certo margine (circa 2 ore) risponde semplicemente vuoto qualunque orario passato si richieda; verificato inviando richieste dirette all'API con vari orari. Ora l'app accumula i risultati per la sessione corrente (stazione + filtro + giorno) invece di sostituire la lista ad ogni richiesta, così i treni già visti restano visibili — e cliccabili per vederne la posizione — anche dopo che l'API smette di restituirli. Le voci più vecchie di 3 ore vengono scartate per non far crescere la lista all'infinito.
+- **"In orario" mostrato per treni non ancora partiti**: l'etichetta si basava solo sul campo ritardo, che vale 0 sia per "confermato in orario" sia per "nessuna informazione perché non è ancora partito". Ora si confronta l'orario schedulato con l'ora reale attuale: se il treno non ha ancora raggiunto il proprio orario, viene mostrato "Non partito" invece di "In orario".
+- **Spinner di caricamento bloccato in loop infinito**: lo scroll infinito si autoattivava senza sosta quando la lista visibile era molto corta (es. un solo treno, come nel fallback "dati non ancora disponibili") — la condizione "vicino al fondo della lista" era sempre vera con pochi elementi, quindi il caricamento successivo scattava di continuo. Aggiunto un flag che ferma i tentativi automatici non appena una richiesta non trova più treni nuovi da aggiungere.
 
 ## 2026-07-21
 
@@ -35,3 +37,4 @@ Tutte le modifiche rilevanti al progetto TreniRT (app Android + web/PWA).
 - v1.1.0 → v1.2.0: ricerca con cambio treno, scroll infinito.
 - v1.2.0 → v1.3.0: fix del bug sul giorno di riferimento, messaggio di verifica-non-disponibile.
 - v1.3.0 → v1.4.0: tasto indietro corretto, treni già partiti non spariscono più dalla lista.
+- v1.4.0 → v1.4.1: fix etichetta "In orario" per treni non ancora partiti, fix loop infinito dello scroll.
