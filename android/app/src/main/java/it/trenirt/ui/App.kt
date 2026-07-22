@@ -4,6 +4,7 @@ package it.trenirt.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -65,6 +66,10 @@ fun delayColor(delay: Int): Color = when {
 @Composable
 fun TreniRTApp(vm: TreniViewModel = viewModel()) {
     val state by vm.state.collectAsState()
+
+    // Hardware/gesture back should behave like the in-app "← Indietro" button — return to the
+    // station list instead of exiting the app straight out of the train detail screen.
+    BackHandler(enabled = state.showDetail) { vm.goBack() }
 
     MaterialTheme(
         colorScheme = darkColorScheme(

@@ -128,6 +128,10 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
     private var stopCheckJob: Job? = null
     private val stopCheckSemaphore = Semaphore(6)
 
+    // Identifies which (station, filter, day) the current stationTrains list accumulates for —
+    // see mergeBoard().
+    private var boardCacheKey: String? = null
+
     init {
         _state.value = _state.value.copy(
             recentTrips = loadRecent(KEY_RECENT_TRIPS),
@@ -247,6 +251,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
     fun clearStation() {
         stopCheckJob?.cancel()
         stationSearchJob?.cancel()
+        boardCacheKey = null
         _state.value = _state.value.copy(
             selectedStation = null, stationQuery = "", stationSuggestions = emptyList(),
             stationTrains = emptyList(), error = null,
@@ -500,29 +505,40 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                val boardDate = time ?: Date()
                 val trains = if (filter == StationListFilter.DEPARTURES)
                     ViaggiaTrenoApi.getDepartures(station.code, time)
                 else
                     ViaggiaTrenoApi.getArrivals(station.code, time)
+                // Merge BEFORE deciding whether to fall back to tomorrow: ViaggiaTreno's live
+                // board always reflects a window around actual real time regardless of the
+                // timestamp queried, so a past "today" request commonly comes back empty even
+                // when we already have (still-relevant, not yet evicted) trains cached from an
+                // earlier fetch this session — e.g. a train that has since departed. Falling back
+                // to tomorrow in that case would discard those in favor of an unrelated schedule.
+                val merged = mergeBoard(trains, station.code, filter, boardDate)
 
-                if (time != null && time.before(Date()) && trains.isEmpty()) {
+                if (merged.isEmpty() && time != null && time.before(Date())) {
+                    // Nothing fresh and nothing usable cached for today — the chosen past clock
+                    // time is most likely meant as "the next time this happens", i.e. tomorrow.
                     val tomorrow = Date(time.time + 86400000)
                     val trainsTomorrow = if (filter == StationListFilter.DEPARTURES)
                         ViaggiaTrenoApi.getDepartures(station.code, tomorrow)
                     else
                         ViaggiaTrenoApi.getArrivals(station.code, tomorrow)
+                    val mergedTomorrow = mergeBoard(trainsTomorrow, station.code, filter, tomorrow)
                     _state.value = _state.value.copy(
-                        stationTrains = trainsTomorrow,
+                        stationTrains = mergedTomorrow,
                         isLoading = false,
                         effectiveBoardDate = tomorrow,
-                        error = if (trainsTomorrow.isEmpty()) "Nessun treno trovato" else "Orario nel passato — orari di domani"
+                        error = if (mergedTomorrow.isEmpty()) "Nessun treno trovato" else "Orario nel passato — orari di domani"
                     )
                 } else {
                     _state.value = _state.value.copy(
-                        stationTrains = trains,
+                        stationTrains = merged,
                         isLoading = false,
-                        effectiveBoardDate = time ?: Date(),
-                        error = if (trains.isEmpty()) "Nessun treno trovato" else null
+                        effectiveBoardDate = boardDate,
+                        error = if (merged.isEmpty()) "Nessun treno trovato" else null
                     )
                 }
                 if (_state.value.selectedDestination != null) refreshStopCheck()
@@ -553,8 +569,9 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                 else
                     ViaggiaTrenoApi.getArrivals(station.code, nextAnchor)
                 val existingKeys = trains.map { it.numeroTreno to it.codOrigine }.toSet()
-                val newOnes = more.filter { (it.numeroTreno to it.codOrigine) !in existingKeys }
-                _state.value = _state.value.copy(stationTrains = trains + newOnes, isLoadingMore = false)
+                val merged = mergeBoard(more, station.code, filter, referenceDate)
+                val newOnes = merged.filter { (it.numeroTreno to it.codOrigine) !in existingKeys }
+                _state.value = _state.value.copy(stationTrains = merged, isLoadingMore = false)
                 if (_state.value.selectedDestination != null && newOnes.isNotEmpty()) {
                     appendStopCheck(newOnes)
                 }
@@ -562,6 +579,59 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                 Log.e(TAG, "Error loading more trains", e)
                 _state.value = _state.value.copy(isLoadingMore = false)
             }
+        }
+    }
+
+    private fun dayKeyFor(date: Date): String {
+        val cal = Calendar.getInstance(TimeZone.getTimeZone("Europe/Rome"))
+        cal.time = date
+        return "${cal.get(Calendar.YEAR)}-${cal.get(Calendar.DAY_OF_YEAR)}"
+    }
+
+    private fun minutesOfDay(hhmm: String?): Int? {
+        if (hhmm.isNullOrBlank()) return null
+        val parts = hhmm.split(":")
+        if (parts.size != 2) return null
+        val h = parts[0].toIntOrNull() ?: return null
+        val m = parts[1].toIntOrNull() ?: return null
+        return h * 60 + m
+    }
+
+    /** ViaggiaTreno's live board only shows a rolling window around the actual current real-world
+     *  time and drops a train the moment it departs — there is no way to ask it for history, even
+     *  by passing a past timestamp (past a certain grace period it just returns empty). To avoid
+     *  already-departed trains vanishing on the next refresh, accumulate results across fetches
+     *  for the same (station, filter, day) instead of replacing the list outright. Entries more
+     *  than 3 hours stale are pruned so the list doesn't grow forever — but only when the board is
+     *  for *today*, since that "stale relative to actual now" concept doesn't apply to a future
+     *  day's schedule (e.g. the "past time -> tomorrow" fallback, or scrolling far ahead). */
+    private fun mergeBoard(
+        fresh: List<ViaggiaTrenoApi.StationTrain>,
+        stationCode: String,
+        filter: StationListFilter,
+        boardDate: Date
+    ): List<ViaggiaTrenoApi.StationTrain> {
+        val key = "$stationCode|$filter|${dayKeyFor(boardDate)}"
+        val previous = if (boardCacheKey == key) _state.value.stationTrains else emptyList()
+        boardCacheKey = key
+
+        val merged = LinkedHashMap<Pair<Int, String>, ViaggiaTrenoApi.StationTrain>()
+        for (t in previous) merged[t.numeroTreno to t.codOrigine] = t
+        for (t in fresh) merged[t.numeroTreno to t.codOrigine] = t // fresh data wins on conflict
+
+        val isToday = dayKeyFor(boardDate) == dayKeyFor(Date())
+        val values = if (isToday) {
+            val nowCal = Calendar.getInstance(TimeZone.getTimeZone("Europe/Rome"))
+            val nowMin = nowCal.get(Calendar.HOUR_OF_DAY) * 60 + nowCal.get(Calendar.MINUTE)
+            merged.values.filter { t ->
+                val sched = minutesOfDay(if (filter == StationListFilter.DEPARTURES) t.compOrarioPartenza else t.compOrarioArrivo)
+                sched == null || sched >= nowMin - 180
+            }
+        } else {
+            merged.values
+        }
+        return values.sortedBy { t ->
+            minutesOfDay(if (filter == StationListFilter.DEPARTURES) t.compOrarioPartenza else t.compOrarioArrivo) ?: Int.MAX_VALUE
         }
     }
 
