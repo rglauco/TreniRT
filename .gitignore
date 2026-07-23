@@ -26,3 +26,6 @@ captures/
 
 # --- macOS ---
 .DS_Store
+
+# --- Bozze di design, non fanno parte del progetto ---
+design-drafts/

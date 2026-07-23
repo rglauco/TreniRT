@@ -2,6 +2,13 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android + web/PWA).
 
+## 2026-07-23 — Icona definitiva (solo Android)
+
+### Modificato
+- **Icona sostituita di nuovo**: dopo alcune iterazioni sul design vettoriale (locomotiva stilizzata, poi vista frontale), scelta un'illustrazione di un treno ad alta velocità generata dall'utente con IA — su sfondo arancione acceso, invariato dalle iterazioni precedenti.
+- L'asset è una **PNG raster** (non più interamente vettoriale come i tentativi precedenti): il layer di sfondo resta un vettore Android (arancione pieno), il layer in primo piano è l'illustrazione con sfondo trasparente.
+- **Nota tecnica emersa durante il test**: il sistema delle icone adattive di Android ritaglia automaticamente il layer "foreground" a circa il 66% dell'area del canvas *prima* di applicare la sagoma del launcher (cerchio/squircle) — un comportamento non replicato correttamente da un primo test fatto solo con una maschera circolare "a mano", che aveva mostrato un risultato ingannevolmente positivo. Il contenuto è stato ridimensionato per rispettare questa zona sicura reale, verificato installando l'app e ispezionando l'icona vera sia nella hotseat che nel cassetto app dell'emulatore.
+
 ## 2026-07-23 — Nuova icona (solo Android)
 
 ### Modificato
@@ -73,3 +80,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.4.0 → v1.4.1: fix etichetta "In orario" per treni non ancora partiti, fix loop infinito dello scroll.
 - v1.4.1 → v1.5.0: tema chiaro, pagina di aiuto, fix padding barre di sistema (logo e ultima card non più coperti).
 - v1.5.0 → v1.5.1: nuova icona (treno ad alta velocità su sfondo rosso acceso).
+- v1.5.1 → v1.5.2: icona sostituita di nuovo — illustrazione IA del treno su sfondo arancione, fix zona sicura icona adattiva.
