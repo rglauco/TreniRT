@@ -1,9 +1,8 @@
 # 🚆 TreniRT
 
-Treni italiani in tempo reale, usando gli stessi dati pubblici di ViaggiaTreno (Trenitalia). Due modi per usarla:
+Treni italiani in tempo reale, usando gli stessi dati pubblici di ViaggiaTreno (Trenitalia).
 
 - **[`android/`](android/)** — app nativa Android (Kotlin + Jetpack Compose). Ricerca per stazione (con destinazione opzionale e ricerca automatica di coincidenze/cambio treno) o per numero treno, tema chiaro/scuro, cronologia ricerche, pagina di aiuto in italiano.
-- **[`app/`](app/)** — companion web/PWA (Flask), installabile come app anche su Android tramite browser.
 
 Vedi il [CHANGELOG](CHANGELOG.md) per la cronologia delle modifiche.
 

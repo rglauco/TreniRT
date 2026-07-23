@@ -1,13 +1,6 @@
 # Changelog
 
-Tutte le modifiche rilevanti al progetto TreniRT (app Android + web/PWA).
-
-## 2026-07-23 — Allineamento app web/PWA (solo Flask)
-
-### Aggiunto
-- **Tema chiaro**, identico nella logica a quello Android: stessa tavolozza colori (chiaro e scuro), pulsante ☀️/🌙 in alto per cambiare, scelta salvata in `localStorage` e applicata anche prima del primo render per evitare lampeggi visivi.
-- **Pagina di aiuto** (pulsante ❓ in alto), stesso testo italiano della versione Android: come funziona la ricerca per stazione e per numero treno, la cronologia, l'aggiornamento dei dati, il limite della ricerca nel passato per stazione, e il disclaimer "Chi siamo".
-- **Icona dell'app** allineata alla nuova icona Android (locomotiva nera su sfondo arancione): favicon, icona per la home screen (iOS/Android) e icone del manifest PWA generate dallo stesso disegno vettoriale, al posto della vecchia emoji 🚆 usata come icona placeholder.
+Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
 ## 2026-07-23 — Icona vettoriale definitiva (solo Android)
 
@@ -33,9 +26,8 @@ Tutte le modifiche rilevanti al progetto TreniRT (app Android + web/PWA).
 
 ### Aggiunto
 - **Licenza GNU AGPL-3.0-or-later** per l'intero progetto (file `LICENSE` alla radice, testo ufficiale invariato). Scelta per tutelare il progetto da chi volesse prendere il codice, chiuderlo e farlo girare come servizio commerciale senza ridare nulla indietro — l'AGPL copre anche l'uso "solo come servizio web", a differenza della GPL normale.
-- Intestazioni `SPDX-License-Identifier: AGPL-3.0-or-later` nei file sorgente principali (Kotlin e Python).
+- Intestazioni `SPDX-License-Identifier: AGPL-3.0-or-later` nei file sorgente principali.
 - **README principale del progetto** (prima assente), con sezioni Licenza e Disclaimer.
-- Sezioni **Licenza** e **Disclaimer** anche nel README dell'app web.
 - **Disclaimer "Chi siamo"** aggiunto in fondo alla pagina di aiuto in-app: TreniRT non è affiliato, sponsorizzato o approvato da Trenitalia/RFI/Gruppo FS, ed è fornito così com'è senza garanzie.
 
 ### Nota
@@ -80,12 +72,12 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - **Ricerca con un cambio treno**: se nessun treno diretto raggiunge la destinazione, l'app cerca automaticamente una coincidenza a una fermata intermedia, mostrando stazione di cambio, orari e treno di proseguimento.
 - **Pulsante "Inverti partenza/destinazione"**: scambia le due stazioni in un tocco.
 - **Cronologia ricerche**: le ultime 10 coppie partenza→destinazione e le ultime 10 ricerche per numero treno vengono salvate e proposte come scorciatoie rapide.
-- **Time picker a rotellina** (solo Android; il web usa il selettore orario nativo del browser) al posto della digitazione manuale dell'orario.
+- **Time picker a rotellina** al posto della digitazione manuale dell'orario.
 - **Refresh manuale**: pulsante per aggiornare la lista treni per stazione e il dettaglio treno (con fermate) senza dover ridigitare la ricerca.
 - **Scroll infinito**: arrivando in fondo alla lista treni, vengono caricati automaticamente gli orari successivi.
 - **Numero di versione visibile in app**, per sapere sempre quale build si sta usando (Android: v1.3.0 nella barra superiore).
 - **Pulsante "X"** per cancellare rapidamente il campo stazione di partenza (già presente per la destinazione).
-- Repository GitHub (privato) con `.gitignore` per Python e Android/Kotlin/Gradle.
+- Repository GitHub (privato) con `.gitignore` per Android/Kotlin/Gradle.
 
 ## Versioni Android
 - v1.0 → v1.1.0: filtro destinazione, time picker, cronologia ricerche, refresh, fix vari.
