@@ -2,6 +2,15 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android + web/PWA).
 
+## 2026-07-23 (solo Android)
+
+### Aggiunto
+- **Tema chiaro**, oltre a quello scuro esistente — utile per chi usa l'app sotto il sole, dove uno schermo nero è difficile da leggere. Pulsante ☀️/🌙 in alto per passare dall'uno all'altro; la scelta resta salvata tra un avvio e l'altro.
+- **Pagina di aiuto in italiano** (pulsante ❓ in alto): spiega come funziona la ricerca per stazione e per numero treno, la cronologia, l'aggiornamento automatico/manuale, e in particolare il limite della ricerca di treni nel passato quando non c'è una cache di sessione (perché a volte compare "orario nel passato — orari di domani" invece dei treni già passati).
+
+### Corretto
+- **Logo in alto coperto dall'orologio/icone di sistema, e ultima card della lista coperta dai tasti di navigazione Android**: l'app usa la modalità edge-to-edge ma non teneva conto delle barre di sistema nel proprio padding. Aggiunto il padding necessario in base agli inset reali del dispositivo, così il contenuto non finisce più sotto la barra di stato in alto né sotto la barra di navigazione in basso.
+
 ## 2026-07-22 (solo Android)
 
 ### Corretto
@@ -45,3 +54,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.2.0 → v1.3.0: fix del bug sul giorno di riferimento, messaggio di verifica-non-disponibile.
 - v1.3.0 → v1.4.0: tasto indietro corretto, treni già partiti non spariscono più dalla lista.
 - v1.4.0 → v1.4.1: fix etichetta "In orario" per treni non ancora partiti, fix loop infinito dello scroll.
+- v1.4.1 → v1.5.0: tema chiaro, pagina di aiuto, fix padding barre di sistema (logo e ultima card non più coperti).

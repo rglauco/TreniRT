@@ -83,7 +83,9 @@ data class UiState(
     // Identifies the train currently shown in the detail screen, so it can be refreshed
     val currentTrainOriginCode: String? = null,
     val currentTrainNumber: Int? = null,
-    val currentTrainReferenceDay: Long = 0L
+    val currentTrainReferenceDay: Long = 0L,
+    val isDarkTheme: Boolean = true,
+    val showHelp: Boolean = false
 ) {
     /** What the list should actually show right now. */
     val displayedTrains: List<ViaggiaTrenoApi.StationTrain>
@@ -115,6 +117,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         private const val PREFS_NAME = "trenirt_prefs"
         private const val KEY_RECENT_TRIPS = "recent_trips"
         private const val KEY_RECENT_TRAINS = "recent_trains"
+        private const val KEY_DARK_THEME = "dark_theme"
         private const val MAX_RECENT = 10
         private const val MIN_TRANSFER_MS = 60_000L // 1 minute — don't suggest impossible connections
         private const val MAX_TRANSFER_WAIT_MS = 90 * 60_000L // 90 minutes — cap how long a wait is worth suggesting
@@ -139,8 +142,23 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
     init {
         _state.value = _state.value.copy(
             recentTrips = loadRecent(KEY_RECENT_TRIPS),
-            recentTrains = loadRecent(KEY_RECENT_TRAINS)
+            recentTrains = loadRecent(KEY_RECENT_TRAINS),
+            isDarkTheme = prefs.getBoolean(KEY_DARK_THEME, true)
         )
+    }
+
+    fun toggleTheme() {
+        val newValue = !_state.value.isDarkTheme
+        _state.value = _state.value.copy(isDarkTheme = newValue)
+        prefs.edit().putBoolean(KEY_DARK_THEME, newValue).apply()
+    }
+
+    fun showHelp() {
+        _state.value = _state.value.copy(showHelp = true)
+    }
+
+    fun hideHelp() {
+        _state.value = _state.value.copy(showHelp = false)
     }
 
     private inline fun <reified T> loadRecent(key: String): List<T> {

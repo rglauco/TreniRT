@@ -20,6 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,16 +47,43 @@ import it.trenirt.viewmodel.UiState
 import java.text.SimpleDateFormat
 import java.util.*
 
+private class Palette(
+    val bg: Color, val card: Color, val border: Color, val text: Color, val muted: Color,
+    val accent: Color, val green: Color, val red: Color, val orange: Color
+)
+
+private val DarkPalette = Palette(
+    bg = Color(0xFF0d1117), card = Color(0xFF161b22), border = Color(0xFF30363d),
+    text = Color(0xFFc9d1d9), muted = Color(0xFF8b949e), accent = Color(0xFF58a6ff),
+    green = Color(0xFF3fb950), red = Color(0xFFf85149), orange = Color(0xFFd29922)
+)
+
+// Light theme for outdoor/daytime use, where a black screen is hard to read in sunlight.
+private val LightPalette = Palette(
+    bg = Color(0xFFffffff), card = Color(0xFFf6f8fa), border = Color(0xFFd0d7de),
+    text = Color(0xFF1f2328), muted = Color(0xFF656d76), accent = Color(0xFF0969da),
+    green = Color(0xFF1a7f37), red = Color(0xFFcf222e), orange = Color(0xFF9a6700)
+)
+
+/** Backs every color used in the UI with mutable Compose state so toggling the theme updates
+ *  every composable that reads C.xxx, without threading a palette parameter through the whole
+ *  tree. [applyDark] must run before the rest of the tree composes each time isDarkTheme changes. */
 object C {
-    val bg = Color(0xFF0d1117)
-    val card = Color(0xFF161b22)
-    val border = Color(0xFF30363d)
-    val text = Color(0xFFc9d1d9)
-    val muted = Color(0xFF8b949e)
-    val accent = Color(0xFF58a6ff)
-    val green = Color(0xFF3fb950)
-    val red = Color(0xFFf85149)
-    val orange = Color(0xFFd29922)
+    var bg by mutableStateOf(DarkPalette.bg)
+    var card by mutableStateOf(DarkPalette.card)
+    var border by mutableStateOf(DarkPalette.border)
+    var text by mutableStateOf(DarkPalette.text)
+    var muted by mutableStateOf(DarkPalette.muted)
+    var accent by mutableStateOf(DarkPalette.accent)
+    var green by mutableStateOf(DarkPalette.green)
+    var red by mutableStateOf(DarkPalette.red)
+    var orange by mutableStateOf(DarkPalette.orange)
+
+    fun applyDark(isDark: Boolean) {
+        val p = if (isDark) DarkPalette else LightPalette
+        bg = p.bg; card = p.card; border = p.border; text = p.text; muted = p.muted
+        accent = p.accent; green = p.green; red = p.red; orange = p.orange
+    }
 }
 
 fun delayColor(delay: Int): Color = when {
@@ -84,27 +113,45 @@ fun scheduledInstant(schedHHmm: String?, referenceDayMs: Long): Date? {
 @Composable
 fun TreniRTApp(vm: TreniViewModel = viewModel()) {
     val state by vm.state.collectAsState()
+    C.applyDark(state.isDarkTheme)
 
     // Hardware/gesture back should behave like the in-app "← Indietro" button — return to the
-    // station list instead of exiting the app straight out of the train detail screen.
-    BackHandler(enabled = state.showDetail) { vm.goBack() }
+    // previous screen instead of exiting the app straight out of train detail or help.
+    BackHandler(enabled = state.showDetail || state.showHelp) {
+        if (state.showHelp) vm.hideHelp() else vm.goBack()
+    }
 
-    MaterialTheme(
-        colorScheme = darkColorScheme(
-            background = C.bg, surface = C.card, primary = C.accent,
-            onBackground = C.text, onSurface = C.text, onPrimary = C.bg,
-            error = C.red, surfaceVariant = C.card, outline = C.border
-        )
-    ) {
+    val scheme = if (state.isDarkTheme) darkColorScheme(
+        background = C.bg, surface = C.card, primary = C.accent,
+        onBackground = C.text, onSurface = C.text, onPrimary = C.bg,
+        error = C.red, surfaceVariant = C.card, outline = C.border
+    ) else lightColorScheme(
+        background = C.bg, surface = C.card, primary = C.accent,
+        onBackground = C.text, onSurface = C.text, onPrimary = Color.White,
+        error = C.red, surfaceVariant = C.card, outline = C.border
+    )
+
+    MaterialTheme(colorScheme = scheme) {
         Surface(modifier = Modifier.fillMaxSize(), color = C.bg) {
-            Column(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
-                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(vertical = 8.dp)) {
+            // Edge-to-edge is enabled in MainActivity, so pad by the system bars ourselves —
+            // otherwise the header sits under the status bar clock/icons and the last list item
+            // sits under the gesture/navigation bar.
+            Column(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars).padding(horizontal = 12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
                     Text("🚆 TreniRT", color = C.accent, fontSize = 22.sp)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", color = C.muted, fontSize = 11.sp, modifier = Modifier.padding(bottom = 3.dp))
+                    Text("v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", color = C.muted, fontSize = 11.sp)
+                    Spacer(modifier = Modifier.weight(1f))
+                    IconButton(onClick = { vm.toggleTheme() }, modifier = Modifier.size(36.dp)) {
+                        Text(if (state.isDarkTheme) "☀️" else "🌙", fontSize = 18.sp)
+                    }
+                    IconButton(onClick = { vm.showHelp() }, modifier = Modifier.size(36.dp)) {
+                        Text("❓", fontSize = 16.sp)
+                    }
                 }
 
                 when {
+                    state.showHelp -> HelpScreen(vm::hideHelp)
                     state.showDetail && state.trainDetail != null -> {
                         TrainDetailScreen(state.trainDetail!!, state.currentTrainReferenceDay, state.isLoading, vm::goBack, vm::refreshTrainDetail, vm::onStationClicked)
                     }
@@ -489,6 +536,54 @@ fun TrainCard(train: StationTrain, onClick: () -> Unit) {
             }
         }
     }
+}
+
+// ── Help ─────────────────────────────────────────────────────────────
+
+@Composable
+fun HelpScreen(onBack: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        TextButton(onClick = onBack) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro", tint = C.text)
+            Spacer(modifier = Modifier.width(4.dp))
+            Text("Indietro", color = C.text)
+        }
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
+            HelpTitle("🚆 Come funziona TreniRT")
+            HelpBody("È un'app per vedere in tempo reale gli orari dei treni italiani, usando gli stessi dati di ViaggiaTreno (Trenitalia). Niente account, niente pubblicità: apri, cerchi, guardi il treno.")
+
+            HelpTitle("Cercare per stazione")
+            HelpBody("Scrivi il nome della stazione e scegli dai suggerimenti. Puoi vedere le Partenze o gli Arrivi, e scegliere un orario diverso da \"adesso\" toccando il pulsante con l'orologio.")
+            HelpBody("Se aggiungi anche una destinazione (o provenienza), l'app ti mostra solo i treni che ci arrivano davvero — anche quelli che richiedono un cambio a metà strada, indicandoti dove scendere e che treno prendere dopo.")
+
+            HelpTitle("Cercare per numero treno")
+            HelpBody("Scrivi il numero e vedi tutte le fermate di quel treno, con orari previsti e reali, ritardo e dove si trova adesso. Funziona anche per un treno partito da ore.")
+
+            HelpTitle("Ricerche recenti")
+            HelpBody("Le ultime combinazioni partenza→destinazione e gli ultimi numeri treno cercati restano salvati come scorciatoie, per non dover riscrivere tutto quando sei di corsa.")
+
+            HelpTitle("Aggiornamento dei dati")
+            HelpBody("La lista si aggiorna da sola ogni minuto. C'è anche un pulsante di aggiornamento manuale (🔄) se vuoi essere sicuro di avere l'ultimissimo dato subito.")
+
+            HelpTitle("⏳ Un limite da conoscere: la ricerca nel passato")
+            HelpBody("Se cerchi un treno per NUMERO, l'app può mostrartelo anche ore dopo che è partito: quel dato resta disponibile per tutta la giornata.")
+            HelpBody("Se invece cerchi per STAZIONE, la situazione è diversa: quella lista è una specie di \"tabellone dal vivo\", legata all'orologio reale del momento — non è un archivio consultabile. Se chiedi un orario di più di un paio d'ore fa, il tabellone risulta vuoto, perché quel dato semplicemente non esiste più da nessuna parte (non è colpa dell'app: Trenitalia stessa non lo mette a disposizione).")
+            HelpBody("C'è un'eccezione: se l'app ha già mostrato quei treni in questa sessione (ad esempio con \"adesso\"), li tiene a memoria e te li fa rivedere anche dopo che sono partiti. Ma se apri l'app e chiedi subito un orario passato senza che l'app li abbia mai visti dal vivo, ti conviene cercare per numero treno invece che per stazione.")
+
+            HelpTitle("Tema chiaro / scuro")
+            HelpBody("Il pulsante ☀️/🌙 in alto cambia il tema: scuro per la sera, chiaro per usarla sotto il sole senza fatica. La scelta resta salvata.")
+        }
+    }
+}
+
+@Composable
+private fun HelpTitle(text: String) {
+    Text(text, color = C.accent, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp, bottom = 6.dp))
+}
+
+@Composable
+private fun HelpBody(text: String) {
+    Text(text, color = C.text, fontSize = 13.sp, lineHeight = 19.sp, modifier = Modifier.padding(bottom = 8.dp))
 }
 
 // ── Train Detail ─────────────────────────────────────────────────────
