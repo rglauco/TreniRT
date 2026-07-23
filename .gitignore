@@ -17,3 +17,6 @@ captures/
 
 # --- Bozze di design, non fanno parte del progetto ---
 design-drafts/
+
+# --- Note personali, non fanno parte del progetto ---
+f-droid.md
