@@ -2,6 +2,14 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android + web/PWA).
 
+## 2026-07-23 — Icona vettoriale definitiva (solo Android)
+
+### Modificato
+- **Icona convertita da PNG raster a vettore Android puro**: stesso identico disegno (locomotiva stilizzata nera su sfondo arancione), ma il layer in primo piano ora è un `VectorDrawable` invece di un'immagine raster — nitido a qualunque risoluzione/densità schermo, senza bisogno di più file PNG per densità diverse.
+- Il disegno vettoriale definitivo arriva da un file SVG rifinito a mano (Inkscape) a partire dall'illustrazione IA originale, con canvas corretto per non tagliare muso/coda del treno.
+- Rigenerate anche le icone legacy (`mipmap/ic_launcher.png`, usate come fallback su launcher più vecchi) dallo stesso disegno vettoriale.
+- Scartata, dopo un test, una variante con sfumatura bianco-nero sulla locomotiva: a 48×48px (la dimensione reale minima dell'icona) la sfumatura appiattiva il disegno in una macchia grigia poco leggibile, soprattutto vicino al muso chiaro sullo sfondo arancione. Tenuta la versione a colore pieno nero.
+
 ## 2026-07-23 — Icona definitiva (solo Android)
 
 ### Modificato
@@ -81,3 +89,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.4.1 → v1.5.0: tema chiaro, pagina di aiuto, fix padding barre di sistema (logo e ultima card non più coperti).
 - v1.5.0 → v1.5.1: nuova icona (treno ad alta velocità su sfondo rosso acceso).
 - v1.5.1 → v1.5.2: icona sostituita di nuovo — illustrazione IA del treno su sfondo arancione, fix zona sicura icona adattiva.
+- v1.5.2 → v1.5.3: icona convertita da PNG raster a vettore Android puro (stesso disegno), nitida a ogni densità schermo.
