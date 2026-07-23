@@ -1,0 +1,13 @@
+TreniRT mostra orari, partenze, arrivi e ritardi dei treni italiani in tempo reale, usando gli stessi dati pubblici dell'infrastruttura ViaggiaTreno di Trenitalia — gli stessi consultabili dal sito e dall'app ufficiali.
+
+Funzionalità principali:
+
+* Partenze e arrivi per stazione, a qualsiasi orario
+* Ricerca per numero treno, con tutte le fermate e il ritardo in tempo reale
+* Filtro per stazione di destinazione, con ricerca automatica di coincidenze/cambio treno quando non c'è un treno diretto
+* Cronologia delle ultime ricerche per stazione e per numero treno
+* Tema chiaro e scuro
+* Aggiornamento automatico (scroll infinito) e manuale dei dati
+* Nessuna pubblicità, nessun tracker, nessuna raccolta di dati personali
+
+TreniRT è un progetto indipendente e amatoriale, non affiliato, sponsorizzato o approvato da Trenitalia, RFI o Gruppo FS.
