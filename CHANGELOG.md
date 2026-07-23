@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android + web/PWA).
 
+## 2026-07-23 — Nuova icona (solo Android)
+
+### Modificato
+- **Icona dell'app ridisegnata**: la vecchia icona (una forma astratta poco leggibile) è stata sostituita con il profilo netto di un treno ad alta velocità visto di lato, muso aerodinamico a punta, due finestrini, e linee di velocità gialle che suggeriscono il movimento — su sfondo rosso acceso, per risaltare bene tra le altre app in home screen. Icona interamente vettoriale (nessuna immagine esterna), verificata leggibile anche alla dimensione minima reale (48×48px) e con mascheramento circolare del launcher.
+
 ## 2026-07-23 — Licenza e disclaimer
 
 ### Aggiunto
@@ -67,3 +72,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.3.0 → v1.4.0: tasto indietro corretto, treni già partiti non spariscono più dalla lista.
 - v1.4.0 → v1.4.1: fix etichetta "In orario" per treni non ancora partiti, fix loop infinito dello scroll.
 - v1.4.1 → v1.5.0: tema chiaro, pagina di aiuto, fix padding barre di sistema (logo e ultima card non più coperti).
+- v1.5.0 → v1.5.1: nuova icona (treno ad alta velocità su sfondo rosso acceso).

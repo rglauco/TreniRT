@@ -3,10 +3,16 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Speed lines trailing the train, suggesting motion -->
     <path
-        android:fillColor="#58a6ff"
-        android:pathData="M30,30h48v6h-6v6h6v6h-6v6h-6v-6h-6v6h-6v-6h-6v12h-6V36h6v-6z"/>
+        android:fillColor="#FFD400"
+        android:pathData="M18,47h11v2h-11z M12,53h17v2h-17z M18,59h11v2h-11z"/>
+    <!-- Train hull: aerodynamic wedge nose pointing right -->
     <path
-        android:fillColor="#3fb950"
-        android:pathData="M54,66 L54,70 L42,70 L42,78 L66,78 L66,70 L54,70"/>
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,46 L70,46 L86,54 L70,64 L30,64 Z"/>
+    <!-- Windows, punched through in the background color -->
+    <path
+        android:fillColor="#E8262C"
+        android:pathData="M36,50h10v8h-10z M52,50h10v8h-10z"/>
 </vector>
