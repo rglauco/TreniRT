@@ -1,0 +1,22 @@
+Categories:
+  - Navigation
+License: AGPL-3.0-or-later
+SourceCode: https://github.com/rglauco/TreniRT
+IssueTracker: https://github.com/rglauco/TreniRT/issues
+Changelog: https://github.com/rglauco/TreniRT/blob/main/CHANGELOG.md
+
+RepoType: git
+Repo: https://github.com/rglauco/TreniRT.git
+
+Builds:
+  - versionName: "1.5.3"
+    versionCode: 10
+    commit: "1.5.3"
+    subdir: android
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: "1.5.3"
+CurrentVersionCode: 10
