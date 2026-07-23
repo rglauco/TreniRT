@@ -46,3 +46,11 @@ Dal telefono: `http://<IP-LOCALE>:5000`
 | `/api/arrivi/<code>` | Arrivi a una stazione |
 | `/api/cercaTreno/<num>` | Cerca treno per numero |
 | `/api/andamento/<origin>/<num>` | Dettaglio andamento treno |
+
+## Licenza
+
+Distribuito sotto licenza [GNU AGPL-3.0-or-later](../LICENSE). In breve: chiunque distribuisca una versione modificata di questo software — anche solo facendola girare come servizio accessibile via rete, senza mai distribuire un binario — deve rendere disponibile il proprio codice sorgente modificato con la stessa licenza.
+
+## Disclaimer
+
+TreniRT è un progetto indipendente e amatoriale, **non affiliato, sponsorizzato o approvato da Trenitalia, RFI o Gruppo FS**. Utilizza gli stessi dati pubblici dell'infrastruttura ViaggiaTreno consultabili dal sito e dall'app ufficiali, ma non è un prodotto ufficiale né ne garantisce l'accuratezza. Il servizio è fornito "così com'è", senza alcuna garanzia — vedi la licenza per i termini completi.

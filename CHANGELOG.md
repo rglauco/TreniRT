@@ -2,6 +2,18 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android + web/PWA).
 
+## 2026-07-23 — Licenza e disclaimer
+
+### Aggiunto
+- **Licenza GNU AGPL-3.0-or-later** per l'intero progetto (file `LICENSE` alla radice, testo ufficiale invariato). Scelta per tutelare il progetto da chi volesse prendere il codice, chiuderlo e farlo girare come servizio commerciale senza ridare nulla indietro — l'AGPL copre anche l'uso "solo come servizio web", a differenza della GPL normale.
+- Intestazioni `SPDX-License-Identifier: AGPL-3.0-or-later` nei file sorgente principali (Kotlin e Python).
+- **README principale del progetto** (prima assente), con sezioni Licenza e Disclaimer.
+- Sezioni **Licenza** e **Disclaimer** anche nel README dell'app web.
+- **Disclaimer "Chi siamo"** aggiunto in fondo alla pagina di aiuto in-app: TreniRT non è affiliato, sponsorizzato o approvato da Trenitalia/RFI/Gruppo FS, ed è fornito così com'è senza garanzie.
+
+### Nota
+Valutati anche i passaggi per una futura pubblicazione su F-Droid (dipendenze e permessi già compatibili — nessuna libreria proprietaria, nessun tracker; mancano ancora un repository pubblico e la scelta definitiva del percorso di pubblicazione).
+
 ## 2026-07-23 (solo Android)
 
 ### Aggiunto

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package it.trenirt.ui
@@ -572,6 +573,9 @@ fun HelpScreen(onBack: () -> Unit) {
 
             HelpTitle("Tema chiaro / scuro")
             HelpBody("Il pulsante ☀️/🌙 in alto cambia il tema: scuro per la sera, chiaro per usarla sotto il sole senza fatica. La scelta resta salvata.")
+
+            HelpTitle("ℹ️ Chi siamo")
+            HelpBody("TreniRT è un progetto indipendente e amatoriale, non affiliato, sponsorizzato o approvato da Trenitalia, RFI o Gruppo FS. Usa gli stessi dati pubblici dell'infrastruttura ViaggiaTreno consultabili dal sito e dall'app ufficiali, ma non è un prodotto ufficiale né ne garantisce l'accuratezza.")
         }
     }
 }

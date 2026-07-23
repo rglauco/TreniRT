@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package it.trenirt.ui.theme
 
 import androidx.compose.material3.MaterialTheme
