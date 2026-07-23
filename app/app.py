@@ -18,7 +18,7 @@ session.mount("http://", requests.adapters.HTTPAdapter(max_retries=3))
 
 TZ_ROME = timezone(timedelta(hours=2))  # CEST
 
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.4.0"
 
 
 def vt_get(method: str, *params: str):
@@ -118,16 +118,28 @@ HTML = r"""<!DOCTYPE html>
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#1a237e">
+<meta name="theme-color" content="#0d1117">
 <title>TreniRT</title>
 <link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/static/icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+<script>(function(){try{if(localStorage.getItem('trenirt_theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
 <style>
 :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--orange:#d29922;--yellow:#e3b341}
+:root[data-theme="light"]{--bg:#ffffff;--card:#f6f8fa;--border:#d0d7de;--text:#1f2328;--muted:#656d76;--accent:#0969da;--green:#1a7f37;--red:#cf222e;--orange:#9a6700;--yellow:#9a6700}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-tap-highlight-color:transparent}
 .container{max-width:600px;margin:0 auto;padding:12px}
 h1{font-size:1.3rem;text-align:center;padding:8px 0;color:var(--accent)}
 .version-tag{font-size:.6em;color:var(--muted);font-weight:400;margin-left:6px}
+.topbar{display:flex;align-items:center;justify-content:center;position:relative}
+.topbar h1{flex:1}
+.header-btns{position:absolute;right:0;display:flex;gap:6px}
+.header-btn{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:1rem;line-height:1}
+.help-title{color:var(--accent);font-weight:700;font-size:1rem;margin:16px 0 4px}
+.help-title:first-child{margin-top:0}
+.help-body{font-size:.9rem;line-height:1.5;color:var(--text);margin-bottom:4px}
 .tabs{display:flex;gap:4px;margin-bottom:12px}
 .tab{flex:1;padding:10px;text-align:center;border-radius:8px;cursor:pointer;background:var(--card);border:1px solid var(--border);font-size:.9rem;transition:all .2s}
 .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
@@ -197,8 +209,15 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0;color:var(--accent)}
 </head>
 <body>
 <div class="container">
-<h1>🚆 TreniRT <span class="version-tag">v__APP_VERSION__</span></h1>
+<div class="topbar">
+  <h1>🚆 TreniRT <span class="version-tag">v__APP_VERSION__</span></h1>
+  <div class="header-btns">
+    <div class="header-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Cambia tema">☀️</div>
+    <div class="header-btn" onclick="toggleHelp()" title="Aiuto">❓</div>
+  </div>
+</div>
 
+<div id="main-view">
 <div class="tabs">
   <div class="tab active" id="tab-station" onclick="switchTab('station')">Stazione</div>
   <div class="tab" id="tab-train" onclick="switchTab('train')">Numero Treno</div>
@@ -242,6 +261,39 @@ h1{font-size:1.3rem;text-align:center;padding:8px 0;color:var(--accent)}
 </div>
 
 <div id="results"></div>
+</div>
+
+<div id="help-page" style="display:none">
+  <div class="detail-topbar">
+    <div class="back-btn" onclick="toggleHelp()">&larr; Indietro</div>
+  </div>
+  <div class="help-title">🚆 Come funziona TreniRT</div>
+  <div class="help-body">È un'app per vedere in tempo reale gli orari dei treni italiani, usando gli stessi dati di ViaggiaTreno (Trenitalia). Niente account, niente pubblicità: apri, cerchi, guardi il treno.</div>
+
+  <div class="help-title">Cercare per stazione</div>
+  <div class="help-body">Scrivi il nome della stazione e scegli dai suggerimenti. Puoi vedere le Partenze o gli Arrivi, e scegliere un orario diverso da "adesso" toccando il pulsante con l'orologio.</div>
+  <div class="help-body">Se aggiungi anche una destinazione (o provenienza), l'app ti mostra solo i treni che ci arrivano davvero — anche quelli che richiedono un cambio a metà strada, indicandoti dove scendere e che treno prendere dopo.</div>
+
+  <div class="help-title">Cercare per numero treno</div>
+  <div class="help-body">Scrivi il numero e vedi tutte le fermate di quel treno, con orari previsti e reali, ritardo e dove si trova adesso. Funziona anche per un treno partito da ore.</div>
+
+  <div class="help-title">Ricerche recenti</div>
+  <div class="help-body">Le ultime combinazioni partenza→destinazione e gli ultimi numeri treno cercati restano salvati come scorciatoie, per non dover riscrivere tutto quando sei di corsa.</div>
+
+  <div class="help-title">Aggiornamento dei dati</div>
+  <div class="help-body">La lista si aggiorna da sola ogni minuto. C'è anche un pulsante di aggiornamento manuale (🔄) se vuoi essere sicuro di avere l'ultimissimo dato subito.</div>
+
+  <div class="help-title">⏳ Un limite da conoscere: la ricerca nel passato</div>
+  <div class="help-body">Se cerchi un treno per NUMERO, l'app può mostrartelo anche ore dopo che è partito: quel dato resta disponibile per tutta la giornata.</div>
+  <div class="help-body">Se invece cerchi per STAZIONE, la situazione è diversa: quella lista è una specie di "tabellone dal vivo", legata all'orologio reale del momento — non è un archivio consultabile. Se chiedi un orario di più di un paio d'ore fa, il tabellone risulta vuoto, perché quel dato semplicemente non esiste più da nessuna parte (non è colpa dell'app: Trenitalia stessa non lo mette a disposizione).</div>
+  <div class="help-body">C'è un'eccezione: se l'app ha già mostrato quei treni in questa sessione (ad esempio con "adesso"), li tiene a memoria e te li fa rivedere anche dopo che sono partiti. Ma se apri l'app e chiedi subito un orario passato senza che l'app li abbia mai visti dal vivo, ti conviene cercare per numero treno invece che per stazione.</div>
+
+  <div class="help-title">Tema chiaro / scuro</div>
+  <div class="help-body">Il pulsante ☀️/🌙 in alto cambia il tema: scuro per la sera, chiaro per usarla sotto il sole senza fatica. La scelta resta salvata.</div>
+
+  <div class="help-title">ℹ️ Chi siamo</div>
+  <div class="help-body">TreniRT è un progetto indipendente e amatoriale, non affiliato, sponsorizzato o approvato da Trenitalia, RFI o Gruppo FS. Usa gli stessi dati pubblici dell'infrastruttura ViaggiaTreno consultabili dal sito e dall'app ufficiali, ma non è un prodotto ufficiale né ne garantisce l'accuratezza.</div>
+</div>
 </div>
 
 <script>
@@ -1037,6 +1089,28 @@ function stopAutoRefresh() {
   if (refreshInterval) { clearInterval(refreshInterval); refreshInterval = null; }
 }
 
+// ── Theme ─────────────────────────────────────────────────────────────
+function applyTheme(theme) {
+  if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  else document.documentElement.removeAttribute('data-theme');
+  $('theme-toggle-btn').textContent = theme === 'light' ? '🌙' : '☀️';
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', theme === 'light' ? '#ffffff' : '#0d1117');
+}
+function toggleTheme() {
+  const current = localStorage.getItem('trenirt_theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('trenirt_theme', next);
+  applyTheme(next);
+}
+
+// ── Help page ─────────────────────────────────────────────────────────
+function toggleHelp() {
+  const showingHelp = $('help-page').style.display !== 'none';
+  $('help-page').style.display = showingHelp ? 'none' : '';
+  $('main-view').style.display = showingHelp ? '' : 'none';
+}
+
+applyTheme(localStorage.getItem('trenirt_theme') || 'dark');
 updateDestLabel();
 renderRecentTrips();
 startAutoRefresh();
@@ -1053,10 +1127,11 @@ MANIFEST = json.dumps({
     "start_url": "/",
     "display": "standalone",
     "background_color": "#0d1117",
-    "theme_color": "#1a237e",
+    "theme_color": "#0d1117",
     "icons": [
-        {"src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚆</text></svg>",
-         "sizes": "any", "type": "image/svg+xml"}
+        {"src": "/static/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"},
+        {"src": "/static/icon-192.png", "sizes": "192x192", "type": "image/png"},
+        {"src": "/static/icon-512.png", "sizes": "512x512", "type": "image/png"}
     ]
 }, ensure_ascii=False)
 

@@ -2,6 +2,13 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android + web/PWA).
 
+## 2026-07-23 — Allineamento app web/PWA (solo Flask)
+
+### Aggiunto
+- **Tema chiaro**, identico nella logica a quello Android: stessa tavolozza colori (chiaro e scuro), pulsante ☀️/🌙 in alto per cambiare, scelta salvata in `localStorage` e applicata anche prima del primo render per evitare lampeggi visivi.
+- **Pagina di aiuto** (pulsante ❓ in alto), stesso testo italiano della versione Android: come funziona la ricerca per stazione e per numero treno, la cronologia, l'aggiornamento dei dati, il limite della ricerca nel passato per stazione, e il disclaimer "Chi siamo".
+- **Icona dell'app** allineata alla nuova icona Android (locomotiva nera su sfondo arancione): favicon, icona per la home screen (iOS/Android) e icone del manifest PWA generate dallo stesso disegno vettoriale, al posto della vecchia emoji 🚆 usata come icona placeholder.
+
 ## 2026-07-23 — Icona vettoriale definitiva (solo Android)
 
 ### Modificato
