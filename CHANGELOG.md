@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-07-25 — Fix "Non partito" nelle ricerche per arrivi
+
+### Corretto
+- **Treni già partiti da tempo mostrati come "Non partito"** nelle ricerche per arrivi (es. CONEGLIANO → PREGANZIOL, arrivi): l'app calcolava questa etichetta confrontando l'orario schedulato con l'orologio attuale, ma per una ricerca arrivi l'orario disponibile è quello di arrivo alla stazione cercata, non quello di partenza dall'origine — quindi qualunque treno ancora in viaggio, anche se partito da tempo, risultava "non partito" solo perché non ancora arrivato a destinazione. Ora si usa direttamente il campo `nonPartito` restituito dall'API di ViaggiaTreno, già calcolato correttamente lato server, sia nella lista treni che nel dettaglio treno.
+
 ## 2026-07-23 — Icona vettoriale definitiva (solo Android)
 
 ### Modificato
@@ -89,3 +94,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.0 → v1.5.1: nuova icona (treno ad alta velocità su sfondo rosso acceso).
 - v1.5.1 → v1.5.2: icona sostituita di nuovo — illustrazione IA del treno su sfondo arancione, fix zona sicura icona adattiva.
 - v1.5.2 → v1.5.3: icona convertita da PNG raster a vettore Android puro (stesso disegno), nitida a ogni densità schermo.
+- v1.5.3 → v1.5.4: fix "Non partito" mostrato erroneamente per treni già partiti nelle ricerche per arrivi.
