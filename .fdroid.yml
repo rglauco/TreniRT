@@ -15,8 +15,14 @@ Builds:
     subdir: android/app
     gradle:
       - yes
+  - versionName: 1.5.4
+    versionCode: 11
+    commit: af4bd6e14344b86de5cbeb60a0746cbea60ca975
+    subdir: android/app
+    gradle:
+      - yes
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.5.3
-CurrentVersionCode: 10
+CurrentVersion: 1.5.4
+CurrentVersionCode: 11
