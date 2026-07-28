@@ -707,23 +707,47 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    private suspend fun showTrainDetail(originCode: String, number: Int, referenceDay: Long, recordAs: ViaggiaTrenoApi.TrainSuggestion) {
+        try {
+            val detail = ViaggiaTrenoApi.getTrainDetail(originCode, number, referenceDay)
+            _state.value = _state.value.copy(
+                trainDetail = detail, isLoading = false, showDetail = true,
+                currentTrainOriginCode = originCode, currentTrainNumber = number,
+                currentTrainReferenceDay = referenceDay
+            )
+            recordRecentTrain(recordAs)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading train detail", e)
+            _state.value = _state.value.copy(isLoading = false, error = "Errore di caricamento")
+        }
+    }
+
     fun selectTrain(suggestion: ViaggiaTrenoApi.TrainSuggestion) {
         _state.value = _state.value.copy(trainSuggestions = emptyList(), isLoading = true, showDetail = false, mode = "train")
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val num = suggestion.number.toIntOrNull() ?: return@launch
-                val referenceDay = suggestion.resolvedReferenceDay()
-                val detail = ViaggiaTrenoApi.getTrainDetail(suggestion.originCode, num, referenceDay)
-                _state.value = _state.value.copy(
-                    trainDetail = detail, isLoading = false, showDetail = true,
-                    currentTrainOriginCode = suggestion.originCode, currentTrainNumber = num,
-                    currentTrainReferenceDay = referenceDay
-                )
-                recordRecentTrain(suggestion)
+            val num = suggestion.number.toIntOrNull() ?: return@launch
+            showTrainDetail(suggestion.originCode, num, suggestion.resolvedReferenceDay(), suggestion)
+        }
+    }
+
+    /** Recent-train entries can be days old: the saved day is no longer meaningful, so re-run a
+     *  live search for the number instead of trusting it — same as if the user just typed it. */
+    fun selectRecentTrain(suggestion: ViaggiaTrenoApi.TrainSuggestion) {
+        _state.value = _state.value.copy(isLoading = true, showDetail = false, mode = "train")
+        viewModelScope.launch(Dispatchers.IO) {
+            val fresh = try {
+                ViaggiaTrenoApi.searchTrain(suggestion.number)
+                    .let { results -> results.firstOrNull { it.originCode == suggestion.originCode } ?: results.firstOrNull() }
             } catch (e: Exception) {
-                Log.e(TAG, "Error loading train detail", e)
-                _state.value = _state.value.copy(isLoading = false, error = "Errore di caricamento")
+                Log.e(TAG, "Error refreshing recent train", e)
+                null
             }
+            val num = fresh?.number?.toIntOrNull()
+            if (fresh == null || num == null) {
+                _state.value = _state.value.copy(isLoading = false, error = "Treno ${suggestion.number} non trovato per oggi")
+                return@launch
+            }
+            showTrainDetail(fresh.originCode, num, fresh.resolvedReferenceDay(), fresh)
         }
     }
 

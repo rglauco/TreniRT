@@ -387,7 +387,7 @@ fun TrainSearchTab(state: UiState, vm: TreniViewModel) {
         Column(modifier = Modifier.fillMaxWidth()) {
             state.recentTrains.forEach { t ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { vm.selectTrain(t) }.padding(vertical = 10.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { vm.selectRecentTrain(t) }.padding(vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("${t.number} — ${t.originName}", color = C.text, fontSize = 13.sp)

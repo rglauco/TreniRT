@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-07-28 — Fix ricerche recenti per numero treno
+
+### Corretto
+- **Le ricerche recenti per numero treno smettevano di funzionare dal giorno dopo**: il tap su una voce salvata riusava lo stesso giorno di riferimento della ricerca originale, passato invariato all'API `andamentoTreno` — passato quel giorno, la richiesta non trovava più la corsa giusta. Ora selezionare una ricerca recente rilancia sempre una ricerca live del numero (come se lo si digitasse da capo) e mostra lo stato attuale del treno, indipendentemente da quando è stata salvata.
+
 ## 2026-07-25 — Fix "Non partito" nelle ricerche per arrivi
 
 ### Corretto
@@ -95,3 +100,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.1 → v1.5.2: icona sostituita di nuovo — illustrazione IA del treno su sfondo arancione, fix zona sicura icona adattiva.
 - v1.5.2 → v1.5.3: icona convertita da PNG raster a vettore Android puro (stesso disegno), nitida a ogni densità schermo.
 - v1.5.3 → v1.5.4: fix "Non partito" mostrato erroneamente per treni già partiti nelle ricerche per arrivi.
+- v1.5.4 → v1.5.5: fix ricerche recenti per numero treno che smettevano di funzionare il giorno dopo.
