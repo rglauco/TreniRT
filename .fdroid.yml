@@ -29,7 +29,14 @@ Builds:
     gradle:
       - yes
 
+  - versionName: 1.5.6
+    versionCode: 13
+    commit: 7c5363f8a688deb11443ec57c3bc112eec5bd40f
+    subdir: android/app
+    gradle:
+      - yes
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.5.5
-CurrentVersionCode: 12
+CurrentVersion: 1.5.6
+CurrentVersionCode: 13
