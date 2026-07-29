@@ -552,9 +552,11 @@ fun TrainCard(
                 Spacer(modifier = Modifier.weight(1f))
                 Text(delayText, color = delayCol, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
-            Text(dest, color = if (isCancelled) C.red.copy(alpha = 0.6f) else C.muted, fontSize = 13.sp,
-                maxLines = 1, overflow = TextOverflow.Ellipsis,
-                textDecoration = if (isCancelled) TextDecoration.LineThrough else null)
+            if (departure == null || arrival == null) {
+                Text(dest, color = if (isCancelled) C.red.copy(alpha = 0.6f) else C.muted, fontSize = 13.sp,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    textDecoration = if (isCancelled) TextDecoration.LineThrough else null)
+            }
             if (departure != null && arrival != null) {
                 val segmentColor = if (isCancelled) C.red.copy(alpha = 0.6f) else C.text
                 Column {

@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-07-29 — Destinazione finale visibile solo senza filtro
+
+### Corretto
+- **Destinazione finale del treno mostrata solo quando non è impostato un filtro destinazione**: era stata tolta del tutto dalla card della lista perché ridondante col dettaglio treno, ma senza filtro destinazione era l'unica indicazione di direzione visibile in lista. Ora compare solo in assenza di filtro; con il filtro attivo la sostituisce il tragitto (partenza/arrivo/cambio) già mostrato.
+
 ## 2026-07-29 — Tragitto nel filtro destinazione
 
 ### Aggiunto
@@ -111,3 +116,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.3 → v1.5.4: fix "Non partito" mostrato erroneamente per treni già partiti nelle ricerche per arrivi.
 - v1.5.4 → v1.5.5: fix ricerche recenti per numero treno che smettevano di funzionare il giorno dopo.
 - v1.5.5 → v1.5.6: tragitto (partenza/arrivo/cambio) nel filtro destinazione, fix coincidenze che ripassavano dall'origine.
+- v1.5.6 → v1.5.7: destinazione finale del treno mostrata solo quando non c'è un filtro destinazione attivo.
