@@ -2,6 +2,15 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-07-29 — Tragitto nel filtro destinazione
+
+### Aggiunto
+- **Il filtro per stazione di destinazione ora mostra il tragitto**, non solo l'orario di partenza dalla stazione cercata: quando partenza e destinazione sono entrambe indicate, la card del treno mostra sempre la destinazione finale, più due righe con orario in grassetto e nome stazione — partenza dalla stazione cercata e arrivo alla stazione di destinazione filtrata — collegate da una linea verticale in stile percorso.
+- **Il cambio treno è integrato nella stessa visualizzazione**: quando serve una coincidenza, la timeline mostra un terzo punto intermedio con la stazione di cambio, l'orario di arrivo del treno visualizzato e di partenza di quello successivo, e nome/numero del treno di coincidenza — al posto della vecchia riga separata.
+
+### Corretto
+- **Coincidenze proposte che richiedevano di ripassare dalla stazione di partenza** (es. Coneglianoand → Sacile → di nuovo Coneglianoand → Preganziol, invece di un treno diretto): il calcolo del cambio ora scarta le coincidenze il cui treno di proseguimento dovrebbe riattraversare l'origine per raggiungere la destinazione.
+
 ## 2026-07-28 — Fix ricerche recenti per numero treno
 
 ### Corretto
@@ -101,3 +110,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.2 → v1.5.3: icona convertita da PNG raster a vettore Android puro (stesso disegno), nitida a ogni densità schermo.
 - v1.5.3 → v1.5.4: fix "Non partito" mostrato erroneamente per treni già partiti nelle ricerche per arrivi.
 - v1.5.4 → v1.5.5: fix ricerche recenti per numero treno che smettevano di funzionare il giorno dopo.
+- v1.5.5 → v1.5.6: tragitto (partenza/arrivo/cambio) nel filtro destinazione, fix coincidenze che ripassavano dall'origine.

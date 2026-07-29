@@ -9,11 +9,13 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -316,16 +318,41 @@ fun StationSearchTab(state: UiState, vm: TreniViewModel) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             items(state.displayedTrains) { train ->
                 Column {
-                    TrainCard(train) { vm.loadTrainDetail(train.codOrigine, train.numeroTreno, train.dataPartenzaTreno) }
-                    state.connectionInfo[train.numeroTreno]?.let { conn ->
+                    val destStation = state.selectedDestination
+                    val originStation = state.selectedStation
+                    val conn = state.connectionInfo[train.numeroTreno]
+                    val destTimeMillis = state.destinationTimes[train.numeroTreno]
+                    var departure: Pair<String, String>? = null // time to station name
+                    var arrival: Pair<String, String>? = null
+                    var transfer: TransferPoint? = null
+                    if (destStation != null && originStation != null) {
                         val sdf = SimpleDateFormat("HH:mm", Locale.ITALIAN)
-                        Text(
-                            "🔄 Cambio a ${conn.transferStationName} (arrivo ${sdf.format(Date(conn.transferArrivalTime))}) " +
-                                "→ ${conn.connectingCategory} ${conn.connectingNumber} delle ${sdf.format(Date(conn.transferDepartureTime))}",
-                            color = C.accent, fontSize = 11.sp,
-                            modifier = Modifier.padding(start = 6.dp, bottom = 6.dp)
-                        )
+                        val searchedTime = train.compOrarioPartenzaZeroEffettivo ?: train.compOrarioArrivoZeroEffettivo
+                            ?: train.compOrarioPartenza ?: train.compOrarioArrivo ?: "—"
+                        val otherEndTime: String? = when {
+                            conn != null -> sdf.format(Date(conn.finalTime))
+                            destTimeMillis != null -> sdf.format(Date(destTimeMillis))
+                            else -> null
+                        }
+                        if (otherEndTime != null) {
+                            if (state.filter == StationListFilter.DEPARTURES) {
+                                departure = searchedTime to originStation.name
+                                arrival = otherEndTime to destStation.name
+                            } else {
+                                departure = otherEndTime to destStation.name
+                                arrival = searchedTime to originStation.name
+                            }
+                        }
+                        if (conn != null) {
+                            transfer = TransferPoint(
+                                stationName = conn.transferStationName,
+                                arrivalTime = sdf.format(Date(conn.transferArrivalTime)),
+                                departureTime = sdf.format(Date(conn.transferDepartureTime)),
+                                connectingTrain = "${conn.connectingCategory} ${conn.connectingNumber}"
+                            )
+                        }
                     }
+                    TrainCard(train, departure, arrival, transfer) { vm.loadTrainDetail(train.codOrigine, train.numeroTreno, train.dataPartenzaTreno) }
                 }
             }
             if (state.isLoadingMore) {
@@ -456,8 +483,38 @@ fun TimePickerField(currentTime: Date?, onTimeSet: (Date?) -> Unit) {
 
 // ── Train card in station list ───────────────────────────────────────
 
+/** A single change of train along the way: arrival of the displayed train at [stationName],
+ *  then departure of [connectingTrain] from the same station. */
+data class TransferPoint(val stationName: String, val arrivalTime: String, val departureTime: String, val connectingTrain: String)
+
+private val TIMELINE_MARKER_SIZE = 14.dp
+
 @Composable
-fun TrainCard(train: StationTrain, onClick: () -> Unit) {
+private fun TimelineEndpoint(time: String, station: String, filled: Boolean, color: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.size(TIMELINE_MARKER_SIZE), contentAlignment = Alignment.Center) {
+            if (filled) Box(modifier = Modifier.size(8.dp).background(color, CircleShape))
+            else Box(modifier = Modifier.size(8.dp).border(1.dp, color, CircleShape))
+        }
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(time, color = color, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        Text(" $station", color = color, fontSize = 13.sp)
+    }
+}
+
+@Composable
+private fun TimelineConnector(color: Color) {
+    Box(modifier = Modifier.padding(start = (TIMELINE_MARKER_SIZE - 1.dp) / 2).width(1.dp).height(10.dp).background(color))
+}
+
+@Composable
+fun TrainCard(
+    train: StationTrain,
+    departure: Pair<String, String>? = null,
+    arrival: Pair<String, String>? = null,
+    transfer: TransferPoint? = null,
+    onClick: () -> Unit
+) {
     val isCancelled = train.provvedimento == 1
     val isPartialCancel = train.provvedimento == 2 || train.riprogrammazione == "Y"
     val delay = train.ritardo
@@ -498,11 +555,37 @@ fun TrainCard(train: StationTrain, onClick: () -> Unit) {
             Text(dest, color = if (isCancelled) C.red.copy(alpha = 0.6f) else C.muted, fontSize = 13.sp,
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
                 textDecoration = if (isCancelled) TextDecoration.LineThrough else null)
+            if (departure != null && arrival != null) {
+                val segmentColor = if (isCancelled) C.red.copy(alpha = 0.6f) else C.text
+                Column {
+                    TimelineEndpoint(departure.first, departure.second, filled = true, color = segmentColor)
+                    TimelineConnector(C.border)
+                    if (transfer != null) {
+                        Row(verticalAlignment = Alignment.Top) {
+                            Box(modifier = Modifier.size(TIMELINE_MARKER_SIZE), contentAlignment = Alignment.Center) {
+                                Text("🔄", fontSize = 10.sp)
+                            }
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Column {
+                                Text(transfer.stationName, color = segmentColor, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "${transfer.arrivalTime} → ${transfer.departureTime} · ${transfer.connectingTrain}",
+                                    color = C.accent, fontSize = 11.sp
+                                )
+                            }
+                        }
+                        TimelineConnector(C.border)
+                    }
+                    TimelineEndpoint(arrival.first, arrival.second, filled = false, color = segmentColor)
+                }
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("⏰ $schedTime", color = if (isCancelled) C.red.copy(alpha = 0.6f) else C.text, fontSize = 13.sp)
-                if (realTime != null && realTime != schedTime) {
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("→ $realTime", color = delayCol, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                if (departure == null || arrival == null) {
+                    Text("⏰ $schedTime", color = if (isCancelled) C.red.copy(alpha = 0.6f) else C.text, fontSize = 13.sp)
+                    if (realTime != null && realTime != schedTime) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("→ $realTime", color = delayCol, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
                 if (isPartialCancel && !isCancelled) {
                     Spacer(modifier = Modifier.width(6.dp))

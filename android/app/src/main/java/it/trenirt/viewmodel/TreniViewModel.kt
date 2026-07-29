@@ -30,13 +30,16 @@ data class RecentTrip(
 )
 
 /** Describes a one-change itinerary: ride the displayed train to [transferStationName],
- *  then continue on [connectingCategory] [connectingNumber]. */
+ *  then continue on [connectingCategory] [connectingNumber]. [finalTime] is the connecting
+ *  train's own time at the filter-destination station — its arrival there when browsing
+ *  departures, its departure from there when browsing arrivals (the far end of that leg). */
 data class TrainConnection(
     val transferStationName: String,
     val transferArrivalTime: Long,
     val transferDepartureTime: Long,
     val connectingCategory: String,
-    val connectingNumber: Int
+    val connectingNumber: Int,
+    val finalTime: Long
 )
 
 data class UiState(
@@ -68,6 +71,9 @@ data class UiState(
     val stopMatchedTrains: List<ViaggiaTrenoApi.StationTrain>? = null,
     // Connection details for entries in stopMatchedTrains that require a change of train, keyed by numeroTreno
     val connectionInfo: Map<Int, TrainConnection> = emptyMap(),
+    // For directly-matched entries in stopMatchedTrains (no change of train): the time at the
+    // destination-filter station, keyed by numeroTreno — see VerifyResult.destinationTimes.
+    val destinationTimes: Map<Int, Long> = emptyMap(),
     // True when we couldn't fetch stop data for any candidate (ViaggiaTreno has no live data
     // for trains that far in the future — typically a schedule for a following day). In that
     // case we fall back to showing the raw, unverified board instead of an empty list.
@@ -204,6 +210,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             mode = "station",
             stopMatchedTrains = null,
             connectionInfo = emptyMap(),
+            destinationTimes = emptyMap(),
             stopVerificationUnavailable = false
         )
         loadStationTrains()
@@ -224,6 +231,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             destinationSuggestions = emptyList(),
             stopMatchedTrains = null,
             connectionInfo = emptyMap(),
+            destinationTimes = emptyMap(),
             stopVerificationUnavailable = false,
             showDetail = false
         )
@@ -265,6 +273,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             selectedDestination = null,
             stopMatchedTrains = null,
             connectionInfo = emptyMap(),
+            destinationTimes = emptyMap(),
             stopVerificationUnavailable = false,
             isCheckingStops = false
         )
@@ -279,7 +288,8 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             selectedStation = null, stationQuery = "", stationSuggestions = emptyList(),
             stationTrains = emptyList(), error = null,
             selectedDestination = null, destinationQuery = "", destinationSuggestions = emptyList(),
-            stopMatchedTrains = null, connectionInfo = emptyMap(), stopVerificationUnavailable = false, isCheckingStops = false
+            stopMatchedTrains = null, connectionInfo = emptyMap(), destinationTimes = emptyMap(),
+            stopVerificationUnavailable = false, isCheckingStops = false
         )
     }
 
@@ -327,7 +337,8 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         stopCheckJob?.cancel()
         _state.value = _state.value.copy(
             selectedDestination = null, destinationQuery = "", destinationSuggestions = emptyList(),
-            stopMatchedTrains = null, connectionInfo = emptyMap(), stopVerificationUnavailable = false, isCheckingStops = false
+            stopMatchedTrains = null, connectionInfo = emptyMap(), destinationTimes = emptyMap(),
+            stopVerificationUnavailable = false, isCheckingStops = false
         )
     }
 
@@ -346,13 +357,13 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         if (trains.isEmpty()) {
             _state.value = _state.value.copy(
                 stopMatchedTrains = emptyList(), isCheckingStops = false,
-                connectionInfo = emptyMap(), stopVerificationUnavailable = false
+                connectionInfo = emptyMap(), destinationTimes = emptyMap(), stopVerificationUnavailable = false
             )
             return
         }
         _state.value = _state.value.copy(
             isCheckingStops = true, stopMatchedTrains = null,
-            connectionInfo = emptyMap(), stopVerificationUnavailable = false
+            connectionInfo = emptyMap(), destinationTimes = emptyMap(), stopVerificationUnavailable = false
         )
         stopCheckJob = viewModelScope.launch(Dispatchers.IO) {
             val result = verifyCandidates(trains, origin, dest, listFilter, time)
@@ -360,6 +371,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                 _state.value = _state.value.copy(
                     stopMatchedTrains = result.matched,
                     connectionInfo = result.connections,
+                    destinationTimes = result.destinationTimes,
                     isCheckingStops = false,
                     stopVerificationUnavailable = result.verificationUnavailable
                 )
@@ -380,6 +392,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                 _state.value = _state.value.copy(
                     stopMatchedTrains = (_state.value.stopMatchedTrains ?: emptyList()) + result.matched,
                     connectionInfo = _state.value.connectionInfo + result.connections,
+                    destinationTimes = _state.value.destinationTimes + result.destinationTimes,
                     stopVerificationUnavailable = _state.value.stopVerificationUnavailable || result.verificationUnavailable
                 )
             }
@@ -389,6 +402,10 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
     private class VerifyResult(
         val matched: List<ViaggiaTrenoApi.StationTrain>,
         val connections: Map<Int, TrainConnection>,
+        // For directly-matched trains (not connections): the time at the destination-filter
+        // station — its arrival there when browsing departures, its departure from there when
+        // browsing arrivals (the other, not-yet-known end of the segment). Keyed by numeroTreno.
+        val destinationTimes: Map<Int, Long>,
         val verificationUnavailable: Boolean
     )
 
@@ -411,6 +428,23 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
 
         val matched = (quickMatched + candidateStops.filter { it.first.numeroTreno in directNumbers }.map { it.first }).toMutableList()
         val connections = mutableMapOf<Int, TrainConnection>()
+
+        // Quick-matched trains skipped the detail fetch above, but pinning down the exact time at
+        // the destination station always needs the stop list — fetch it now for just this (small,
+        // already-filtered) subset instead of the whole candidate list.
+        val stopsByTrain = candidateStops.associate { (train, stops) -> train.numeroTreno to stops }
+        val quickMatchedStops = fetchStopsFor(quickMatched.filter { it.numeroTreno !in stopsByTrain })
+            .associate { (train, stops) -> train.numeroTreno to stops }
+        val allStopsByTrain = stopsByTrain + quickMatchedStops
+        val destinationTimes = mutableMapOf<Int, Long>()
+        for (num in quickMatched.map { it.numeroTreno } + directNumbers) {
+            val stops = allStopsByTrain[num] ?: continue
+            val originIdx = stops.indexOfFirst { it.id == origin.code || stationNamesMatch(it.stazione, origin.name) }
+            val destIdx = stops.indexOfFirst { it.id == dest.code || stationNamesMatch(it.stazione, dest.name) }
+            if (originIdx == -1 || destIdx == -1) continue
+            val effectiveTime = if (listFilter == StationListFilter.DEPARTURES) effectiveArrival(stops[destIdx]) else effectiveDeparture(stops[destIdx])
+            if (effectiveTime > 0) destinationTimes[num] = effectiveTime
+        }
 
         if (unresolved.isNotEmpty()) {
             val connectingBoard = try {
@@ -435,7 +469,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         // everything 204s. A rare early activation shouldn't count as "verification worked" —
         // treat it as unavailable unless most candidates actually resolved.
         val verificationUnavailable = needsDetail.size >= 3 && candidateStops.size < needsDetail.size / 3
-        return VerifyResult(matched, connections, verificationUnavailable)
+        return VerifyResult(matched, connections, destinationTimes, verificationUnavailable)
     }
 
     /** Fetches full stop lists for a batch of trains concurrently, dropping any that fail. */
@@ -495,6 +529,13 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                 val validOrder = if (listFilter == StationListFilter.DEPARTURES) destIdx > matchIdx else destIdx < matchIdx
                 if (!validOrder) continue
 
+                // Reject connections whose continuing train backtracks through the station we
+                // started from — pointless (and a sign the transfer point is in the wrong
+                // direction entirely) if it has to pass back through the origin to reach dest.
+                val legRange = if (listFilter == StationListFilter.DEPARTURES) (matchIdx + 1) until destIdx else (destIdx + 1) until matchIdx
+                val backtracksThroughOrigin = legRange.any { i -> cStops[i].id == origin.code || stationNamesMatch(cStops[i].stazione, origin.name) }
+                if (backtracksThroughOrigin) continue
+
                 val arrival: Long
                 val departure: Long
                 if (listFilter == StationListFilter.DEPARTURES) {
@@ -507,7 +548,10 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                 if (arrival <= 0 || departure <= 0) continue
                 val waitMs = departure - arrival
                 if (waitMs in MIN_TRANSFER_MS..MAX_TRANSFER_WAIT_MS) {
-                    return TrainConnection(transferStop.stazione, arrival, departure, cTrain.categoriaDescrizione, cTrain.numeroTreno)
+                    val finalTime = if (listFilter == StationListFilter.DEPARTURES) effectiveArrival(cStops[destIdx]) else effectiveDeparture(cStops[destIdx])
+                    if (finalTime > 0) {
+                        return TrainConnection(transferStop.stazione, arrival, departure, cTrain.categoriaDescrizione, cTrain.numeroTreno, finalTime)
+                    }
                 }
             }
         }
