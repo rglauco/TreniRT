@@ -369,7 +369,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             val result = verifyCandidates(trains, origin, dest, listFilter, time)
             if (_state.value.selectedDestination == dest) {
                 _state.value = _state.value.copy(
-                    stopMatchedTrains = result.matched,
+                    stopMatchedTrains = sortByBoardTime(result.matched, listFilter),
                     connectionInfo = result.connections,
                     destinationTimes = result.destinationTimes,
                     isCheckingStops = false,
@@ -390,7 +390,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             val result = verifyCandidates(newTrains, origin, dest, listFilter, time)
             if (_state.value.selectedDestination == dest) {
                 _state.value = _state.value.copy(
-                    stopMatchedTrains = (_state.value.stopMatchedTrains ?: emptyList()) + result.matched,
+                    stopMatchedTrains = sortByBoardTime((_state.value.stopMatchedTrains ?: emptyList()) + result.matched, listFilter),
                     connectionInfo = _state.value.connectionInfo + result.connections,
                     destinationTimes = _state.value.destinationTimes + result.destinationTimes,
                     stopVerificationUnavailable = _state.value.stopVerificationUnavailable || result.verificationUnavailable
@@ -678,6 +678,17 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         return h * 60 + m
     }
 
+    /** Chronological order for a board, by scheduled departure (or arrival) time. Used both for
+     *  the main board and for [stopMatchedTrains], which is assembled by concatenating several
+     *  match-kind subsets (already-terminating, verified-via-stops, connections) that are each
+     *  internally time-ordered but not as a whole once joined together. */
+    private fun sortByBoardTime(
+        trains: Collection<ViaggiaTrenoApi.StationTrain>,
+        filter: StationListFilter
+    ): List<ViaggiaTrenoApi.StationTrain> = trains.sortedBy { t ->
+        minutesOfDay(if (filter == StationListFilter.DEPARTURES) t.compOrarioPartenza else t.compOrarioArrivo) ?: Int.MAX_VALUE
+    }
+
     /** ViaggiaTreno's live board only shows a rolling window around the actual current real-world
      *  time and drops a train the moment it departs — there is no way to ask it for history, even
      *  by passing a past timestamp (past a certain grace period it just returns empty). To avoid
@@ -711,9 +722,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         } else {
             merged.values
         }
-        return values.sortedBy { t ->
-            minutesOfDay(if (filter == StationListFilter.DEPARTURES) t.compOrarioPartenza else t.compOrarioArrivo) ?: Int.MAX_VALUE
-        }
+        return sortByBoardTime(values, filter)
     }
 
     /** One minute past the last-shown train's time, on the same day it was fetched for. */
