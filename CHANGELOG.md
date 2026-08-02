@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-08-02 — Ordine treni nella board con filtro destinazione
+
+### Corretto
+- **Treni fuori ordine cronologico nella lista con filtro destinazione**: `stopMatchedTrains` viene costruito concatenando più sottoinsiemi di match (già a destinazione, verificati tramite fermate, con cambio) — ciascuno ordinato internamente ma non nell'insieme una volta unito. La paginazione poi aggiungeva altri blocchi senza mai riordinare, peggiorando il disordine più a lungo restava aperta l'app. Ora si riordina per orario schedulato dopo ogni aggiornamento, come già avviene per la board principale.
+
 ## 2026-07-29 — Destinazione finale visibile solo senza filtro
 
 ### Corretto
@@ -117,3 +122,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.4 → v1.5.5: fix ricerche recenti per numero treno che smettevano di funzionare il giorno dopo.
 - v1.5.5 → v1.5.6: tragitto (partenza/arrivo/cambio) nel filtro destinazione, fix coincidenze che ripassavano dall'origine.
 - v1.5.6 → v1.5.7: destinazione finale del treno mostrata solo quando non c'è un filtro destinazione attivo.
+- v1.5.7 → v1.5.8: fix ordine cronologico dei treni nella board con filtro destinazione.
