@@ -11,8 +11,8 @@ android {
         applicationId = "it.trenirt"
         minSdk = 26
         targetSdk = 34
-        versionCode = 15
-        versionName = "1.5.8"
+        versionCode = 16
+        versionName = "1.5.9"
     }
 
     buildTypes {
