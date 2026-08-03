@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-08-03 — Stazione reale per i treni "in stazione"
+
+### Corretto
+- **Etichetta "In stazione" fuorviante**: il flag `inStazione` di ViaggiaTreno indica solo che il treno è fermo da qualche parte lungo il suo percorso, non necessariamente alla stazione cercata. Ora, per i pochi treni con quel flag attivo, l'app recupera la stazione reale dell'ultimo rilevamento (la stessa già mostrata nel dettaglio treno) e mostra "🟢 Fermo a {stazione}" invece del generico "In stazione".
+
 ## 2026-08-02 — Ordine treni nella board con filtro destinazione
 
 ### Corretto
@@ -123,3 +128,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.5 → v1.5.6: tragitto (partenza/arrivo/cambio) nel filtro destinazione, fix coincidenze che ripassavano dall'origine.
 - v1.5.6 → v1.5.7: destinazione finale del treno mostrata solo quando non c'è un filtro destinazione attivo.
 - v1.5.7 → v1.5.8: fix ordine cronologico dei treni nella board con filtro destinazione.
+- v1.5.8 → v1.5.9: stazione reale mostrata per i treni con etichetta "in stazione".

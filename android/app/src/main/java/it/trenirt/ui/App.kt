@@ -352,7 +352,7 @@ fun StationSearchTab(state: UiState, vm: TreniViewModel) {
                             )
                         }
                     }
-                    TrainCard(train, departure, arrival, transfer) { vm.loadTrainDetail(train.codOrigine, train.numeroTreno, train.dataPartenzaTreno) }
+                    TrainCard(train, departure, arrival, transfer, state.inStazioneLocations[train.numeroTreno]) { vm.loadTrainDetail(train.codOrigine, train.numeroTreno, train.dataPartenzaTreno) }
                 }
             }
             if (state.isLoadingMore) {
@@ -513,6 +513,7 @@ fun TrainCard(
     departure: Pair<String, String>? = null,
     arrival: Pair<String, String>? = null,
     transfer: TransferPoint? = null,
+    currentLocation: String? = null,
     onClick: () -> Unit
 ) {
     val isCancelled = train.provvedimento == 1
@@ -595,7 +596,10 @@ fun TrainCard(
                 }
                 if (train.inStazione) {
                     Spacer(modifier = Modifier.weight(1f))
-                    Text("🟢 In stazione", color = C.green, fontSize = 11.sp)
+                    Text(
+                        if (currentLocation != null) "🟢 Fermo a $currentLocation" else "🟢 In stazione",
+                        color = C.green, fontSize = 11.sp
+                    )
                 }
             }
         }

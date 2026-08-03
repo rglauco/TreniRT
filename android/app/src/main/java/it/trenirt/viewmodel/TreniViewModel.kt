@@ -47,6 +47,10 @@ data class UiState(
     val stationSuggestions: List<ViaggiaTrenoApi.StationSuggestion> = emptyList(),
     val selectedStation: ViaggiaTrenoApi.StationSuggestion? = null,
     val stationTrains: List<ViaggiaTrenoApi.StationTrain> = emptyList(),
+    // Where a train flagged inStazione by the API is actually currently stopped — not
+    // necessarily the searched station. Keyed by numeroTreno; filled in lazily via a per-train
+    // detail fetch, see fetchInStazioneLocations().
+    val inStazioneLocations: Map<Int, String> = emptyMap(),
     val filter: StationListFilter = StationListFilter.DEPARTURES,
     val timeOverride: Date? = null,
     // The date actually used for the currently-shown board — differs from timeOverride when the
@@ -211,6 +215,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             stopMatchedTrains = null,
             connectionInfo = emptyMap(),
             destinationTimes = emptyMap(),
+            inStazioneLocations = emptyMap(),
             stopVerificationUnavailable = false
         )
         loadStationTrains()
@@ -232,6 +237,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             stopMatchedTrains = null,
             connectionInfo = emptyMap(),
             destinationTimes = emptyMap(),
+            inStazioneLocations = emptyMap(),
             stopVerificationUnavailable = false,
             showDetail = false
         )
@@ -274,6 +280,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             stopMatchedTrains = null,
             connectionInfo = emptyMap(),
             destinationTimes = emptyMap(),
+            inStazioneLocations = emptyMap(),
             stopVerificationUnavailable = false,
             isCheckingStops = false
         )
@@ -289,6 +296,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             stationTrains = emptyList(), error = null,
             selectedDestination = null, destinationQuery = "", destinationSuggestions = emptyList(),
             stopMatchedTrains = null, connectionInfo = emptyMap(), destinationTimes = emptyMap(),
+            inStazioneLocations = emptyMap(),
             stopVerificationUnavailable = false, isCheckingStops = false
         )
     }
@@ -609,11 +617,37 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                     )
                 }
                 if (_state.value.selectedDestination != null) refreshStopCheck()
+                val locations = fetchInStazioneLocations(_state.value.stationTrains)
+                if (_state.value.selectedStation == station) {
+                    _state.value = _state.value.copy(inStazioneLocations = locations)
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading station trains", e)
                 _state.value = _state.value.copy(isLoading = false, error = "Errore di caricamento")
             }
         }
+    }
+
+    /** ViaggiaTreno's `inStazione` flag on the lightweight board just means "currently stopped
+     *  somewhere along its run" — not necessarily at the searched station, which reads as
+     *  misleading in the list. Fetch the real current station (from andamentoTreno) for just
+     *  this small, already-flagged subset. */
+    private suspend fun fetchInStazioneLocations(
+        trains: List<ViaggiaTrenoApi.StationTrain>
+    ): Map<Int, String> = coroutineScope {
+        trains.filter { it.inStazione }.map { train ->
+            async {
+                val location = try {
+                    stopCheckSemaphore.withPermit {
+                        ViaggiaTrenoApi.getTrainDetail(train.codOrigine, train.numeroTreno, train.resolvedReferenceDay())
+                    }?.stazioneUltimoRilevamento
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error fetching in-stazione location for train ${train.numeroTreno}", e)
+                    null
+                }
+                train.numeroTreno to location?.takeIf { it.isNotBlank() && it != "--" }
+            }
+        }.awaitAll().mapNotNull { (num, loc) -> loc?.let { num to it } }.toMap()
     }
 
     /** Loads the next batch of trains past the last one currently shown — called as the user
@@ -655,6 +689,12 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                 )
                 if (_state.value.selectedDestination != null && newOnes.isNotEmpty()) {
                     appendStopCheck(newOnes)
+                }
+                if (newOnes.isNotEmpty()) {
+                    val newLocations = fetchInStazioneLocations(newOnes)
+                    if (_state.value.selectedStation == station) {
+                        _state.value = _state.value.copy(inStazioneLocations = _state.value.inStazioneLocations + newLocations)
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading more trains", e)
