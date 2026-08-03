@@ -597,7 +597,7 @@ fun TrainCard(
                 if (train.inStazione) {
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        if (currentLocation != null) "🟢 Fermo a $currentLocation" else "🟢 In stazione",
+                        if (currentLocation != null) "🟢 Rilevato a $currentLocation" else "🟢 In stazione",
                         color = C.green, fontSize = 11.sp
                     )
                 }

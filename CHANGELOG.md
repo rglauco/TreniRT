@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-08-03 — "Rilevato a" invece di "Fermo a"
+
+### Corretto
+- **Dicitura "Fermo a {stazione}" fuorviante**: `stazioneUltimoRilevamento` è l'ultimo punto di rilevamento del treno lungo la linea, non necessariamente una fermata ufficiale (può essere un punto di transito). "Fermo a" implicava una sosta che a volte non c'è mai stata. Ora dice "Rilevato a {stazione}".
+
 ## 2026-08-03 — Stazione reale per i treni "in stazione"
 
 ### Corretto
@@ -129,3 +134,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.6 → v1.5.7: destinazione finale del treno mostrata solo quando non c'è un filtro destinazione attivo.
 - v1.5.7 → v1.5.8: fix ordine cronologico dei treni nella board con filtro destinazione.
 - v1.5.8 → v1.5.9: stazione reale mostrata per i treni con etichetta "in stazione".
+- v1.5.9 → v1.5.10: dicitura "Rilevato a" invece di "Fermo a" per l'ultimo punto di rilevamento.
