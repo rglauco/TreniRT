@@ -57,7 +57,14 @@ Builds:
     gradle:
       - yes
 
+  - versionName: 1.5.10
+    versionCode: 17
+    commit: eab5b141a5850fb4ad386c8c9d4701a5e99b3dae
+    subdir: android/app
+    gradle:
+      - yes
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.5.9
-CurrentVersionCode: 16
+CurrentVersion: 1.5.10
+CurrentVersionCode: 17
