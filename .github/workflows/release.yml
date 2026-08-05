@@ -1,0 +1,49 @@
+name: Release
+
+# Fires on the version tags release.sh already creates and pushes (e.g. "1.5.10") — builds a
+# release APK signed with the project's own key (separate from F-Droid's, which signs itself)
+# and publishes it as a GitHub Release, for direct download or tracking via Obtainium.
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Decode signing key
+        working-directory: android
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.jks
+          cat > keystore.properties <<EOF
+          storeFile=release.jks
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyAlias=trenirt
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          EOF
+
+      - name: Build signed release APK
+        working-directory: android
+        run: ./gradlew assembleRelease
+
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk "TreniRT-${{ github.ref_name }}.apk"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: TreniRT ${{ github.ref_name }}
+          body: "Vedi [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) per il dettaglio delle modifiche."
+          files: TreniRT-${{ github.ref_name }}.apk
