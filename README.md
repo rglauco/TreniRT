@@ -6,6 +6,10 @@ Treni italiani in tempo reale, usando gli stessi dati pubblici di ViaggiaTreno (
 
 Vedi il [CHANGELOG](CHANGELOG.md) per la cronologia delle modifiche.
 
+## Installazione
+
+- **[Obtainium](https://github.com/ImranR98/Obtainium)**: [aggiungi TreniRT](obtainium://add/https://github.com/rglauco/TreniRT) per ricevere gli aggiornamenti automaticamente dalle [Release](https://github.com/rglauco/TreniRT/releases) di GitHub (link diretto da aprire sul telefono con Obtainium installato; in alternativa aggiungi manualmente `https://github.com/rglauco/TreniRT` come sorgente).
+
 ## Licenza
 
 Distribuito sotto licenza [GNU AGPL-3.0-or-later](LICENSE). In breve: chiunque distribuisca una versione modificata di questo software — anche solo facendola girare come servizio accessibile via rete, senza mai distribuire un binario — deve rendere disponibile il proprio codice sorgente modificato con la stessa licenza.
