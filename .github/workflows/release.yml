@@ -7,6 +7,7 @@ on:
   push:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch: {} # lets us re-run manually against an existing tag for testing
 
 permissions:
   contents: write
