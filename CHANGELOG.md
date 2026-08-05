@@ -2,6 +2,12 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-08-05 — Distribuzione via GitHub Releases / Obtainium
+
+### Aggiunto
+- **Pipeline di release automatica**: ogni tag di versione ora fa scattare una GitHub Action che compila un APK firmato con una chiave di firma dedicata (separata da quella di F-Droid, che continua a firmare autonomamente) e lo pubblica come Release su GitHub.
+- **Installazione via [Obtainium](https://github.com/ImranR98/Obtainium)**, documentata nel README: aggiunge l'app come sorgente e ne segue gli aggiornamenti automaticamente dalle Release di GitHub, senza passare da F-Droid.
+
 ## 2026-08-03 — "Rilevato a" invece di "Fermo a"
 
 ### Corretto
@@ -135,3 +141,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.7 → v1.5.8: fix ordine cronologico dei treni nella board con filtro destinazione.
 - v1.5.8 → v1.5.9: stazione reale mostrata per i treni con etichetta "in stazione".
 - v1.5.9 → v1.5.10: dicitura "Rilevato a" invece di "Fermo a" per l'ultimo punto di rilevamento.
+- v1.5.10 → v1.5.11: distribuzione via GitHub Releases con pipeline di firma automatica, installazione via Obtainium.
