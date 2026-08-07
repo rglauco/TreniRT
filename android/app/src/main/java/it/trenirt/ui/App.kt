@@ -529,6 +529,7 @@ fun TrainCard(
     val notYetDue = !isCancelled && train.nonPartito
     val delayCol = if (notYetDue) C.muted else delayColor(delay)
     val delayText = when {
+        isCancelled -> "Cancellato"
         delay > 0 -> "+${delay}'"
         delay < 0 -> "${delay}'"
         notYetDue -> "Non partito"
@@ -686,15 +687,17 @@ fun TrainDetailScreen(detail: TrainDetail, isLoading: Boolean, onBack: () -> Uni
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
             Text(detail.categoria, color = C.muted, fontSize = 13.sp)
             Text("${detail.origine} → ${detail.destinazione}", color = C.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            Text(
-                when {
-                    notYetDue -> "🕐 Non ancora partito"
-                    delay == 0 -> "✅ In orario"
-                    delay > 0 -> "⚠️ +$delay min"
-                    else -> "$delay min"
-                },
-                color = if (notYetDue) C.muted else delayColor(delay), fontSize = 20.sp, fontWeight = FontWeight.Bold
-            )
+            if (!isCancelled) {
+                Text(
+                    when {
+                        notYetDue -> "🕐 Non ancora partito"
+                        delay == 0 -> "✅ In orario"
+                        delay > 0 -> "⚠️ +$delay min"
+                        else -> "$delay min"
+                    },
+                    color = if (notYetDue) C.muted else delayColor(delay), fontSize = 20.sp, fontWeight = FontWeight.Bold
+                )
+            }
             if (isCancelled) Text("CANCELLATO", color = C.red, fontWeight = FontWeight.Bold)
             else if (isPartialCancel) Text("PARZIALMENTE CANCELLATO", color = C.orange, fontWeight = FontWeight.Bold)
 

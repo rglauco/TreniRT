@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-08-07 — "In orario" non più mostrato per treni cancellati
+
+### Corretto
+- **Stato "✅ In orario" mostrato insieme a "CANCELLATO"**: nel dettaglio treno il badge di ritardo veniva calcolato senza tener conto dello stato di cancellazione (`provvedimento`), e l'API restituisce spesso `ritardo = 0` anche per i treni cancellati — risultando nel messaggio contraddittorio "✅ In orario" affiancato alla scritta rossa "CANCELLATO". Ora il badge di ritardo viene nascosto quando il treno è cancellato. Stessa correzione applicata alla card della lista partenze/arrivi, dove "In orario" poteva comparire insieme al simbolo "❌" di cancellazione.
+
 ## 2026-08-05 — Distribuzione via GitHub Releases / Obtainium
 
 ### Aggiunto
@@ -142,3 +147,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.8 → v1.5.9: stazione reale mostrata per i treni con etichetta "in stazione".
 - v1.5.9 → v1.5.10: dicitura "Rilevato a" invece di "Fermo a" per l'ultimo punto di rilevamento.
 - v1.5.10 → v1.5.11: distribuzione via GitHub Releases con pipeline di firma automatica, installazione via Obtainium.
+- v1.5.11 → v1.5.12: fix "In orario" mostrato insieme a "CANCELLATO" nel dettaglio treno e nella lista.
