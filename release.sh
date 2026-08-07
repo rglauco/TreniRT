@@ -36,6 +36,16 @@ BUILD_GRADLE="$REPO_DIR/android/app/build.gradle.kts"
 CHANGELOG="$REPO_DIR/CHANGELOG.md"
 FDROID_YML="$REPO_DIR/.fdroid.yml"
 
+# In-place sed that works on both GNU sed (Linux) and BSD sed (macOS) — GNU
+# rejects the empty backup-suffix argument BSD requires after -i.
+sed_i() {
+  if sed --version >/dev/null 2>&1; then
+    sed -i "$@"
+  else
+    sed -i '' "$@"
+  fi
+}
+
 # Inserts a new Builds entry before "AutoUpdateMode:" and updates
 # CurrentVersion/CurrentVersionCode in a .fdroid.yml-shaped file.
 update_fdroid_yaml() {
@@ -62,8 +72,8 @@ update_fdroid_yaml() {
   mv "${file}.new" "$file"
   rm -f "$entry_file"
 
-  sed -i '' "s/^CurrentVersion:.*/CurrentVersion: ${version}/" "$file"
-  sed -i '' "s/^CurrentVersionCode:.*/CurrentVersionCode: ${code}/" "$file"
+  sed_i "s/^CurrentVersion:.*/CurrentVersion: ${version}/" "$file"
+  sed_i "s/^CurrentVersionCode:.*/CurrentVersionCode: ${code}/" "$file"
 }
 
 cd "$REPO_DIR"
@@ -90,8 +100,8 @@ NEW_CODE=$((CURRENT_CODE + 1))
 CURRENT_NAME="$(grep -oE 'versionName = "[^"]+"' "$BUILD_GRADLE" | grep -oE '"[^"]+"' | tr -d '"')"
 
 echo "== Bump versione: $CURRENT_NAME ($CURRENT_CODE) -> $VERSION ($NEW_CODE) =="
-sed -i '' -E "s/versionCode = [0-9]+/versionCode = ${NEW_CODE}/" "$BUILD_GRADLE"
-sed -i '' -E "s/versionName = \"[^\"]+\"/versionName = \"${VERSION}\"/" "$BUILD_GRADLE"
+sed_i -E "s/versionCode = [0-9]+/versionCode = ${NEW_CODE}/" "$BUILD_GRADLE"
+sed_i -E "s/versionName = \"[^\"]+\"/versionName = \"${VERSION}\"/" "$BUILD_GRADLE"
 
 git add "$BUILD_GRADLE" "$CHANGELOG"
 git commit -m "bump to $VERSION"
