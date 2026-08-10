@@ -752,29 +752,38 @@ fun StopRow(stop: TrainStop, onStationClick: (String, String) -> Unit) {
                 isOrigin -> StopTimeRow(
                     schedLabel = "Part.", sched = if (stop.partenza_teorica > 0) sdf.format(Date(stop.partenza_teorica)) else "—",
                     real = if (stop.partenzaReale > 0) sdf.format(Date(stop.partenzaReale)) else null,
+                    expected = expectedTime(sdf, stop.partenza_teorica, stop.partenzaReale, stop.ritardoPartenza),
                     delay = stop.ritardoPartenza,
                     platform = stop.binarioEffettivoPartenzaDescrizione ?: stop.binarioProgrammatoPartenzaDescrizione
                 )
-                isDest -> StopTimeRow(
-                    schedLabel = "Arr.", sched = if (stop.arrivo_teorico > 0) sdf.format(Date(stop.arrivo_teorico)) else "—",
-                    real = if (stop.arrivoReale > 0) sdf.format(Date(stop.arrivoReale)) else null,
-                    delay = maxOf(stop.ritardoArrivo, stop.ritardo),
-                    platform = stop.binarioEffettivoArrivoDescrizione ?: stop.binarioProgrammatoArrivoDescrizione
-                )
+                isDest -> {
+                    val arrDelay = maxOf(stop.ritardoArrivo, stop.ritardo)
+                    StopTimeRow(
+                        schedLabel = "Arr.", sched = if (stop.arrivo_teorico > 0) sdf.format(Date(stop.arrivo_teorico)) else "—",
+                        real = if (stop.arrivoReale > 0) sdf.format(Date(stop.arrivoReale)) else null,
+                        expected = expectedTime(sdf, stop.arrivo_teorico, stop.arrivoReale, arrDelay),
+                        delay = arrDelay,
+                        platform = stop.binarioEffettivoArrivoDescrizione ?: stop.binarioProgrammatoArrivoDescrizione
+                    )
+                }
                 else -> {
                     val arrSched = if (stop.arrivo_teorico > 0) sdf.format(Date(stop.arrivo_teorico)) else "—"
                     val arrReal = if (stop.arrivoReale > 0) sdf.format(Date(stop.arrivoReale)) else null
+                    val arrExpected = expectedTime(sdf, stop.arrivo_teorico, stop.arrivoReale, stop.ritardoArrivo)
                     val depSched = if (stop.partenza_teorica > 0) sdf.format(Date(stop.partenza_teorica)) else "—"
                     val depReal = if (stop.partenzaReale > 0) sdf.format(Date(stop.partenzaReale)) else null
+                    val depExpected = expectedTime(sdf, stop.partenza_teorica, stop.partenzaReale, stop.ritardoPartenza)
                     val platform = stop.binarioEffettivoArrivoDescrizione ?: stop.binarioEffettivoPartenzaDescrizione ?: stop.binarioProgrammatoArrivoDescrizione
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("↓$arrSched", color = C.text, fontSize = 11.sp)
                         if (arrReal != null && arrReal != arrSched) Text(" → $arrReal", color = delayColor(stop.ritardoArrivo), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        else if (arrExpected != null) Text(" ~ $arrExpected", color = delayColor(stop.ritardoArrivo), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         if (stop.ritardoArrivo > 0) Text(" +${stop.ritardoArrivo}'", color = C.orange, fontSize = 10.sp)
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("↓$depSched", color = C.text, fontSize = 11.sp)
                         if (depReal != null && depReal != depSched) Text(" → $depReal", color = delayColor(stop.ritardoPartenza), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        else if (depExpected != null) Text(" ~ $depExpected", color = delayColor(stop.ritardoPartenza), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         if (platform != null) { Spacer(modifier = Modifier.width(4.dp)); Text("Bin $platform", color = C.accent, fontSize = 10.sp) }
                     }
                 }
@@ -784,11 +793,16 @@ fun StopRow(stop: TrainStop, onStationClick: (String, String) -> Unit) {
     }
 }
 
+// Orario previsto = orario teorico + ritardo attuale, mostrato solo per fermate non ancora transitate.
+fun expectedTime(sdf: SimpleDateFormat, scheduledMillis: Long, realMillis: Long, delayMinutes: Int): String? =
+    if (scheduledMillis > 0 && realMillis == 0L && delayMinutes != 0) sdf.format(Date(scheduledMillis + delayMinutes * 60_000L)) else null
+
 @Composable
-fun StopTimeRow(schedLabel: String, sched: String, real: String?, delay: Int, platform: String?) {
+fun StopTimeRow(schedLabel: String, sched: String, real: String?, expected: String? = null, delay: Int, platform: String?) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text("$schedLabel: $sched", color = C.text, fontSize = 12.sp)
         if (real != null && real != sched) Text(" → $real", color = delayColor(delay), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        else if (expected != null) Text(" ~ $expected", color = delayColor(delay), fontSize = 12.sp, fontWeight = FontWeight.Bold)
         if (delay > 0) Text(" +${delay}'", color = C.orange, fontSize = 11.sp)
         else if (delay < 0) Text(" ${delay}'", color = C.accent, fontSize = 11.sp)
         else if (real != null) Text(" in orario", color = C.green, fontSize = 11.sp)
