@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-08-10 — Dimensione testo regolabile
+
+### Aggiunto
+- **Opzione dimensione testo (Normale/Grande/Grandissimo)**: alcuni utenti con difficoltà di vista hanno segnalato caratteri troppo piccoli. Un nuovo pulsante "Aa" in alto, accanto al toggle tema, apre un menu per scegliere tra tre livelli di scala del testo (1×, 1.2×, 1.45×), applicati a tutta l'app. La scelta resta salvata tra un riavvio e l'altro.
+
 ## 2026-08-10 — Orario previsto per le fermate in ritardo
 
 ### Aggiunto
@@ -158,3 +163,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.11 → v1.5.12: fix "In orario" mostrato insieme a "CANCELLATO" nel dettaglio treno e nella lista.
 - v1.5.12 → v1.5.13: orario previsto (teorico + ritardo) nell'elenco fermate per i treni in ritardo.
 - v1.5.13 → v1.5.14: fix orario previsto assente per le fermate future (usava il ritardo di fermata invece di quello attuale del treno).
+- v1.5.14 → v1.5.15: opzione dimensione testo (Normale/Grande/Grandissimo) per l'accessibilità.
