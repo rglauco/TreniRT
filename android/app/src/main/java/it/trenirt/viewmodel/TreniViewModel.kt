@@ -24,6 +24,12 @@ import java.util.*
 
 enum class StationListFilter { DEPARTURES, ARRIVALS }
 
+enum class FontSizeOption(val label: String, val scale: Float) {
+    NORMALE("Normale", 1.0f),
+    GRANDE("Grande", 1.2f),
+    GRANDISSIMO("Grandissimo", 1.45f)
+}
+
 data class RecentTrip(
     val origin: ViaggiaTrenoApi.StationSuggestion,
     val destination: ViaggiaTrenoApi.StationSuggestion
@@ -96,6 +102,7 @@ data class UiState(
     val currentTrainNumber: Int? = null,
     val currentTrainReferenceDay: Long = 0L,
     val isDarkTheme: Boolean = true,
+    val fontSizeOption: FontSizeOption = FontSizeOption.NORMALE,
     val showHelp: Boolean = false
 ) {
     /** What the list should actually show right now. */
@@ -129,6 +136,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_RECENT_TRIPS = "recent_trips"
         private const val KEY_RECENT_TRAINS = "recent_trains"
         private const val KEY_DARK_THEME = "dark_theme"
+        private const val KEY_FONT_SIZE = "font_size_option"
         private const val MAX_RECENT = 10
         private const val MIN_TRANSFER_MS = 60_000L // 1 minute — don't suggest impossible connections
         private const val MAX_TRANSFER_WAIT_MS = 90 * 60_000L // 90 minutes — cap how long a wait is worth suggesting
@@ -154,7 +162,9 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         _state.value = _state.value.copy(
             recentTrips = loadRecent(KEY_RECENT_TRIPS),
             recentTrains = loadRecent(KEY_RECENT_TRAINS),
-            isDarkTheme = prefs.getBoolean(KEY_DARK_THEME, true)
+            isDarkTheme = prefs.getBoolean(KEY_DARK_THEME, true),
+            fontSizeOption = FontSizeOption.entries.find { it.name == prefs.getString(KEY_FONT_SIZE, null) }
+                ?: FontSizeOption.NORMALE
         )
     }
 
@@ -162,6 +172,11 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         val newValue = !_state.value.isDarkTheme
         _state.value = _state.value.copy(isDarkTheme = newValue)
         prefs.edit().putBoolean(KEY_DARK_THEME, newValue).apply()
+    }
+
+    fun setFontSizeOption(option: FontSizeOption) {
+        _state.value = _state.value.copy(fontSizeOption = option)
+        prefs.edit().putString(KEY_FONT_SIZE, option.name).apply()
     }
 
     fun showHelp() {

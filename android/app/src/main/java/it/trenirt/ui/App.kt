@@ -30,11 +30,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -44,6 +46,7 @@ import it.trenirt.api.ViaggiaTrenoApi
 import it.trenirt.api.ViaggiaTrenoApi.StationTrain
 import it.trenirt.api.ViaggiaTrenoApi.TrainDetail
 import it.trenirt.api.ViaggiaTrenoApi.TrainStop
+import it.trenirt.viewmodel.FontSizeOption
 import it.trenirt.viewmodel.StationListFilter
 import it.trenirt.viewmodel.TreniViewModel
 import it.trenirt.viewmodel.UiState
@@ -116,6 +119,13 @@ fun TreniRTApp(vm: TreniViewModel = viewModel()) {
         error = C.red, surfaceVariant = C.card, outline = C.border
     )
 
+    // Sp-based sizes throughout the app scale off LocalDensity.fontScale — riding the same
+    // mechanism Android's own system font-size setting uses — so the user's choice affects
+    // every Text() in the tree without touching each fontSize = X.sp call site individually.
+    val baseDensity = LocalDensity.current
+    val scaledDensity = Density(baseDensity.density, baseDensity.fontScale * state.fontSizeOption.scale)
+
+    CompositionLocalProvider(LocalDensity provides scaledDensity) {
     MaterialTheme(colorScheme = scheme) {
         Surface(modifier = Modifier.fillMaxSize(), color = C.bg) {
             // Edge-to-edge is enabled in MainActivity, so pad by the system bars ourselves —
@@ -127,6 +137,7 @@ fun TreniRTApp(vm: TreniViewModel = viewModel()) {
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", color = C.muted, fontSize = 11.sp)
                     Spacer(modifier = Modifier.weight(1f))
+                    FontSizeButton(state.fontSizeOption, vm::setFontSizeOption)
                     IconButton(onClick = { vm.toggleTheme() }, modifier = Modifier.size(36.dp)) {
                         Text(if (state.isDarkTheme) "☀️" else "🌙", fontSize = 18.sp)
                     }
@@ -147,6 +158,25 @@ fun TreniRTApp(vm: TreniViewModel = viewModel()) {
                         StationSearchTab(state, vm)
                     }
                 }
+            }
+        }
+    }
+    }
+}
+
+@Composable
+private fun FontSizeButton(current: FontSizeOption, onSelect: (FontSizeOption) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { expanded = true }, modifier = Modifier.size(36.dp)) {
+            Text("Aa", color = C.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            FontSizeOption.entries.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(if (option == current) "✓ ${option.label}" else option.label) },
+                    onClick = { onSelect(option); expanded = false }
+                )
             }
         }
     }
@@ -641,6 +671,9 @@ fun HelpScreen(onBack: () -> Unit) {
 
             HelpTitle("Tema chiaro / scuro")
             HelpBody("Il pulsante ☀️/🌙 in alto cambia il tema: scuro per la sera, chiaro per usarla sotto il sole senza fatica. La scelta resta salvata.")
+
+            HelpTitle("Dimensione del testo")
+            HelpBody("Il pulsante \"Aa\" in alto apre la scelta tra Normale, Grande e Grandissimo, per chi ha difficoltà a leggere i caratteri piccoli. Anche questa scelta resta salvata.")
 
             HelpTitle("ℹ️ Chi siamo")
             HelpBody("TreniRT è un progetto indipendente e amatoriale, non affiliato, sponsorizzato o approvato da Trenitalia, RFI o Gruppo FS. Usa gli stessi dati pubblici dell'infrastruttura ViaggiaTreno consultabili dal sito e dall'app ufficiali, ma non è un prodotto ufficiale né ne garantisce l'accuratezza.")
