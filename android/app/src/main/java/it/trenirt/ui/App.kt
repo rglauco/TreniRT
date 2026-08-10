@@ -710,19 +710,24 @@ fun TrainDetailScreen(detail: TrainDetail, isLoading: Boolean, onBack: () -> Uni
         }
 
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(detail.fermate) { stop -> StopRow(stop, onStationClick) }
+            items(detail.fermate) { stop -> StopRow(stop, delay, onStationClick) }
         }
     }
 }
 
 @Composable
-fun StopRow(stop: TrainStop, onStationClick: (String, String) -> Unit) {
+fun StopRow(stop: TrainStop, currentDelay: Int, onStationClick: (String, String) -> Unit) {
     val isCancelled = stop.actualFermataType == 3
     val isOrigin = stop.tipoFermata == "P"
     val isDest = stop.tipoFermata == "A"
     val hasArrived = stop.arrivoReale > 0
     val hasDeparted = stop.partenzaReale > 0
     val isPassed = hasDeparted || hasArrived
+
+    // Le fermate non ancora transitate non hanno ancora un ritardo proprio (l'API lo
+    // riporta a 0), quindi per stimarle si usa il ritardo attuale complessivo del treno.
+    val arrDelay = if (hasArrived) stop.ritardoArrivo else currentDelay
+    val depDelay = if (hasDeparted) stop.ritardoPartenza else currentDelay
 
     val dotColor = when {
         isCancelled -> C.red
@@ -752,38 +757,35 @@ fun StopRow(stop: TrainStop, onStationClick: (String, String) -> Unit) {
                 isOrigin -> StopTimeRow(
                     schedLabel = "Part.", sched = if (stop.partenza_teorica > 0) sdf.format(Date(stop.partenza_teorica)) else "—",
                     real = if (stop.partenzaReale > 0) sdf.format(Date(stop.partenzaReale)) else null,
-                    expected = expectedTime(sdf, stop.partenza_teorica, stop.partenzaReale, stop.ritardoPartenza),
-                    delay = stop.ritardoPartenza,
+                    expected = expectedTime(sdf, stop.partenza_teorica, stop.partenzaReale, depDelay),
+                    delay = depDelay,
                     platform = stop.binarioEffettivoPartenzaDescrizione ?: stop.binarioProgrammatoPartenzaDescrizione
                 )
-                isDest -> {
-                    val arrDelay = maxOf(stop.ritardoArrivo, stop.ritardo)
-                    StopTimeRow(
-                        schedLabel = "Arr.", sched = if (stop.arrivo_teorico > 0) sdf.format(Date(stop.arrivo_teorico)) else "—",
-                        real = if (stop.arrivoReale > 0) sdf.format(Date(stop.arrivoReale)) else null,
-                        expected = expectedTime(sdf, stop.arrivo_teorico, stop.arrivoReale, arrDelay),
-                        delay = arrDelay,
-                        platform = stop.binarioEffettivoArrivoDescrizione ?: stop.binarioProgrammatoArrivoDescrizione
-                    )
-                }
+                isDest -> StopTimeRow(
+                    schedLabel = "Arr.", sched = if (stop.arrivo_teorico > 0) sdf.format(Date(stop.arrivo_teorico)) else "—",
+                    real = if (stop.arrivoReale > 0) sdf.format(Date(stop.arrivoReale)) else null,
+                    expected = expectedTime(sdf, stop.arrivo_teorico, stop.arrivoReale, arrDelay),
+                    delay = arrDelay,
+                    platform = stop.binarioEffettivoArrivoDescrizione ?: stop.binarioProgrammatoArrivoDescrizione
+                )
                 else -> {
                     val arrSched = if (stop.arrivo_teorico > 0) sdf.format(Date(stop.arrivo_teorico)) else "—"
                     val arrReal = if (stop.arrivoReale > 0) sdf.format(Date(stop.arrivoReale)) else null
-                    val arrExpected = expectedTime(sdf, stop.arrivo_teorico, stop.arrivoReale, stop.ritardoArrivo)
+                    val arrExpected = expectedTime(sdf, stop.arrivo_teorico, stop.arrivoReale, arrDelay)
                     val depSched = if (stop.partenza_teorica > 0) sdf.format(Date(stop.partenza_teorica)) else "—"
                     val depReal = if (stop.partenzaReale > 0) sdf.format(Date(stop.partenzaReale)) else null
-                    val depExpected = expectedTime(sdf, stop.partenza_teorica, stop.partenzaReale, stop.ritardoPartenza)
+                    val depExpected = expectedTime(sdf, stop.partenza_teorica, stop.partenzaReale, depDelay)
                     val platform = stop.binarioEffettivoArrivoDescrizione ?: stop.binarioEffettivoPartenzaDescrizione ?: stop.binarioProgrammatoArrivoDescrizione
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("↓$arrSched", color = C.text, fontSize = 11.sp)
-                        if (arrReal != null && arrReal != arrSched) Text(" → $arrReal", color = delayColor(stop.ritardoArrivo), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        else if (arrExpected != null) Text(" ~ $arrExpected", color = delayColor(stop.ritardoArrivo), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        if (stop.ritardoArrivo > 0) Text(" +${stop.ritardoArrivo}'", color = C.orange, fontSize = 10.sp)
+                        if (arrReal != null && arrReal != arrSched) Text(" → $arrReal", color = delayColor(arrDelay), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        else if (arrExpected != null) Text(" ~ $arrExpected", color = delayColor(arrDelay), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        if (arrDelay > 0) Text(" +${arrDelay}'", color = C.orange, fontSize = 10.sp)
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("↓$depSched", color = C.text, fontSize = 11.sp)
-                        if (depReal != null && depReal != depSched) Text(" → $depReal", color = delayColor(stop.ritardoPartenza), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        else if (depExpected != null) Text(" ~ $depExpected", color = delayColor(stop.ritardoPartenza), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        if (depReal != null && depReal != depSched) Text(" → $depReal", color = delayColor(depDelay), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        else if (depExpected != null) Text(" ~ $depExpected", color = delayColor(depDelay), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         if (platform != null) { Spacer(modifier = Modifier.width(4.dp)); Text("Bin $platform", color = C.accent, fontSize = 10.sp) }
                     }
                 }
