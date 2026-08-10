@@ -7,6 +7,9 @@ Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 ### Aggiunto
 - **Orario previsto nell'elenco fermate**: per le fermate non ancora transitate, l'unico segnale di ritardo era il testo "+X'", senza indicare a che ora ci si aspetta effettivamente il treno. Ora, quando manca un orario reale osservato, viene calcolato e mostrato l'orario previsto come orario teorico + ritardo attuale (es. "14:30 ~ 14:42 +12'"), sia per origine/destinazione che per le fermate intermedie.
 
+### Corretto
+- **Orario previsto assente per le fermate future**: la prima versione della funzionalità sommava il ritardo specifico della singola fermata (`ritardoArrivo`/`ritardoPartenza`), che l'API riporta a 0 finché il treno non transita — proprio il caso più comune, quindi in pratica non compariva nulla di nuovo. Ora si usa il ritardo attuale complessivo del treno per stimare le fermate non ancora transitate.
+
 ## 2026-08-07 — "In orario" non più mostrato per treni cancellati
 
 ### Corretto
@@ -154,3 +157,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.10 → v1.5.11: distribuzione via GitHub Releases con pipeline di firma automatica, installazione via Obtainium.
 - v1.5.11 → v1.5.12: fix "In orario" mostrato insieme a "CANCELLATO" nel dettaglio treno e nella lista.
 - v1.5.12 → v1.5.13: orario previsto (teorico + ritardo) nell'elenco fermate per i treni in ritardo.
+- v1.5.13 → v1.5.14: fix orario previsto assente per le fermate future (usava il ritardo di fermata invece di quello attuale del treno).
