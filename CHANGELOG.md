@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-08-11 — Orario previsto più leggibile
+
+### Modificato
+- **Orario previsto poco distinguibile da quello confermato**: l'unica differenza tra i due era la tilde ("~" invece di "→"), facile da non notare. Ora l'orario previsto è tra parentesi, in corsivo e in grigio neutro invece del colore del ritardo (che restava ambiguo — sembrava un ritardo confermato quando era solo una stima, e a piena tinta risultava anche meno leggibile). L'orario confermato resta invariato: grassetto, colore pieno, preceduto da "→".
+
 ## 2026-08-10 — Dimensione testo regolabile
 
 ### Aggiunto
@@ -164,3 +169,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.12 → v1.5.13: orario previsto (teorico + ritardo) nell'elenco fermate per i treni in ritardo.
 - v1.5.13 → v1.5.14: fix orario previsto assente per le fermate future (usava il ritardo di fermata invece di quello attuale del treno).
 - v1.5.14 → v1.5.15: opzione dimensione testo (Normale/Grande/Grandissimo) per l'accessibilità.
+- v1.5.15 → v1.5.16: orario previsto reso più leggibile (parentesi, corsivo, grigio neutro invece della tilde a colore pieno).

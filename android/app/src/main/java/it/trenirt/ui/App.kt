@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -813,12 +814,12 @@ fun StopRow(stop: TrainStop, currentDelay: Int, onStationClick: (String, String)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("↓$arrSched", color = C.text, fontSize = 11.sp)
                         if (arrReal != null && arrReal != arrSched) Text(" → $arrReal", color = delayColor(arrDelay), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        else if (arrExpected != null) Text(" ~ $arrExpected", color = delayColor(arrDelay), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        else if (arrExpected != null) Text(" ($arrExpected)", color = C.muted, fontSize = 11.sp, fontStyle = FontStyle.Italic)
                         if (arrDelay > 0) Text(" +${arrDelay}'", color = C.orange, fontSize = 10.sp)
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("↓$depSched", color = C.text, fontSize = 11.sp)
                         if (depReal != null && depReal != depSched) Text(" → $depReal", color = delayColor(depDelay), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        else if (depExpected != null) Text(" ~ $depExpected", color = delayColor(depDelay), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        else if (depExpected != null) Text(" ($depExpected)", color = C.muted, fontSize = 11.sp, fontStyle = FontStyle.Italic)
                         if (platform != null) { Spacer(modifier = Modifier.width(4.dp)); Text("Bin $platform", color = C.accent, fontSize = 10.sp) }
                     }
                 }
@@ -837,7 +838,7 @@ fun StopTimeRow(schedLabel: String, sched: String, real: String?, expected: Stri
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text("$schedLabel: $sched", color = C.text, fontSize = 12.sp)
         if (real != null && real != sched) Text(" → $real", color = delayColor(delay), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        else if (expected != null) Text(" ~ $expected", color = delayColor(delay), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        else if (expected != null) Text(" ($expected)", color = C.muted, fontSize = 12.sp, fontStyle = FontStyle.Italic)
         if (delay > 0) Text(" +${delay}'", color = C.orange, fontSize = 11.sp)
         else if (delay < 0) Text(" ${delay}'", color = C.accent, fontSize = 11.sp)
         else if (real != null) Text(" in orario", color = C.green, fontSize = 11.sp)
