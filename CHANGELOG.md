@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-08-12 — Arrivo e partenza distinguibili nell'elenco fermate
+
+### Modificato
+- **Orari di arrivo e partenza indistinguibili nelle fermate intermedie**: erano entrambi preceduti dalla stessa freccia "↓", distinguibili solo dalla posizione nella riga. Ora sono preceduti dalle etichette "A" e "P".
+
 ## 2026-08-11 — Orario previsto più leggibile
 
 ### Modificato
@@ -170,3 +175,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.13 → v1.5.14: fix orario previsto assente per le fermate future (usava il ritardo di fermata invece di quello attuale del treno).
 - v1.5.14 → v1.5.15: opzione dimensione testo (Normale/Grande/Grandissimo) per l'accessibilità.
 - v1.5.15 → v1.5.16: orario previsto reso più leggibile (parentesi, corsivo, grigio neutro invece della tilde a colore pieno).
+- v1.5.16 → v1.5.17: etichette "A"/"P" per distinguere arrivo e partenza nelle fermate intermedie.

@@ -812,12 +812,14 @@ fun StopRow(stop: TrainStop, currentDelay: Int, onStationClick: (String, String)
                     val platform = stop.binarioEffettivoArrivoDescrizione ?: stop.binarioEffettivoPartenzaDescrizione ?: stop.binarioProgrammatoArrivoDescrizione
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("↓$arrSched", color = C.text, fontSize = 11.sp)
+                        Text("A", color = C.muted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(" $arrSched", color = C.text, fontSize = 11.sp)
                         if (arrReal != null && arrReal != arrSched) Text(" → $arrReal", color = delayColor(arrDelay), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         else if (arrExpected != null) Text(" ($arrExpected)", color = C.muted, fontSize = 11.sp, fontStyle = FontStyle.Italic)
                         if (arrDelay > 0) Text(" +${arrDelay}'", color = C.orange, fontSize = 10.sp)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("↓$depSched", color = C.text, fontSize = 11.sp)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("P", color = C.muted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(" $depSched", color = C.text, fontSize = 11.sp)
                         if (depReal != null && depReal != depSched) Text(" → $depReal", color = delayColor(depDelay), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         else if (depExpected != null) Text(" ($depExpected)", color = C.muted, fontSize = 11.sp, fontStyle = FontStyle.Italic)
                         if (platform != null) { Spacer(modifier = Modifier.width(4.dp)); Text("Bin $platform", color = C.accent, fontSize = 10.sp) }
