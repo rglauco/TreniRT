@@ -106,7 +106,14 @@ Builds:
     gradle:
       - yes
 
+  - versionName: 1.5.17
+    versionCode: 24
+    commit: 0b970304c38cdd218132ee7b44a5f1607c048f09
+    subdir: android/app
+    gradle:
+      - yes
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.5.16
-CurrentVersionCode: 23
+CurrentVersion: 1.5.17
+CurrentVersionCode: 24
