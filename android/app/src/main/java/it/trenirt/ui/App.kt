@@ -8,12 +8,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,9 +31,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -94,9 +98,9 @@ object C {
 }
 
 fun delayColor(delay: Int): Color = when {
-    delay > 0 -> C.orange
     delay < 0 -> C.accent
-    else -> C.green
+    delay <= 1 -> C.green
+    else -> C.red
 }
 
 @Composable
@@ -743,20 +747,44 @@ fun TrainDetailScreen(detail: TrainDetail, isLoading: Boolean, onBack: () -> Uni
             }
         }
 
+        val reached = remember(detail.fermate) { computeReached(detail.fermate) }
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(detail.fermate) { stop -> StopRow(stop, delay, onStationClick) }
+            itemsIndexed(detail.fermate) { i, stop -> StopRow(stop, delay, reached[i], onStationClick) }
         }
     }
 }
 
+// Una fermata senza orario reale proprio conta comunque come "raggiunta" se una fermata
+// successiva nel percorso ne ha uno: il treno non può aver fatto una fermata più avanti
+// senza essere passato di qui, anche se il monitoraggio di questa specifica fermata ha un
+// buco (capita spesso sulle fermate minori).
+data class StopReached(val arrival: Boolean, val departure: Boolean)
+
+fun computeReached(fermate: List<TrainStop>): List<StopReached> {
+    data class Event(val stopIndex: Int, val isArrival: Boolean, val own: Boolean)
+    val events = mutableListOf<Event>()
+    fermate.forEachIndexed { i, stop ->
+        if (stop.tipoFermata != "P") events.add(Event(i, true, stop.arrivoReale > 0))
+        if (stop.tipoFermata != "A") events.add(Event(i, false, stop.partenzaReale > 0))
+    }
+    val lastOwnIndex = events.indexOfLast { it.own }
+    val arrival = BooleanArray(fermate.size)
+    val departure = BooleanArray(fermate.size)
+    events.forEachIndexed { i, event ->
+        val passed = i <= lastOwnIndex
+        if (event.isArrival) arrival[event.stopIndex] = passed else departure[event.stopIndex] = passed
+    }
+    return fermate.indices.map { StopReached(arrival[it], departure[it]) }
+}
+
 @Composable
-fun StopRow(stop: TrainStop, currentDelay: Int, onStationClick: (String, String) -> Unit) {
+fun StopRow(stop: TrainStop, currentDelay: Int, reached: StopReached, onStationClick: (String, String) -> Unit) {
     val isCancelled = stop.actualFermataType == 3
     val isOrigin = stop.tipoFermata == "P"
     val isDest = stop.tipoFermata == "A"
     val hasArrived = stop.arrivoReale > 0
     val hasDeparted = stop.partenzaReale > 0
-    val isPassed = hasDeparted || hasArrived
+    val isPassed = if (isOrigin) reached.departure else reached.arrival
 
     // Le fermate non ancora transitate non hanno ancora un ritardo proprio (l'API lo
     // riporta a 0), quindi per stimarle si usa il ritardo attuale complessivo del treno.
@@ -769,11 +797,29 @@ fun StopRow(stop: TrainStop, currentDelay: Int, onStationClick: (String, String)
         else -> C.border
     }
     val sdf = SimpleDateFormat("HH:mm", Locale.ITALIAN)
+    val platform = when {
+        isOrigin -> stop.binarioEffettivoPartenzaDescrizione ?: stop.binarioProgrammatoPartenzaDescrizione
+        isDest -> stop.binarioEffettivoArrivoDescrizione ?: stop.binarioProgrammatoArrivoDescrizione
+        else -> stop.binarioEffettivoArrivoDescrizione ?: stop.binarioEffettivoPartenzaDescrizione ?: stop.binarioProgrammatoArrivoDescrizione
+    }
 
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.Top) {
-        Box(modifier = Modifier.padding(top = 4.dp, end = 10.dp).size(10.dp).background(dotColor, RoundedCornerShape(5.dp)))
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).height(IntrinsicSize.Min), verticalAlignment = Alignment.Top) {
+        Canvas(modifier = Modifier.width(20.dp).fillMaxHeight()) {
+            val cx = size.width / 2
+            val dotY = 18.dp.toPx()
+            drawLine(
+                color = C.border,
+                start = Offset(cx, 0f),
+                end = Offset(cx, size.height),
+                strokeWidth = 2.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(7f, 6f), 0f)
+            )
+            drawCircle(color = C.bg, radius = 6.dp.toPx(), center = Offset(cx, dotY))
+            drawCircle(color = dotColor, radius = 6.dp.toPx(), center = Offset(cx, dotY), style = Stroke(width = 2.dp.toPx()))
+            if (isPassed) drawCircle(color = dotColor, radius = 3.dp.toPx(), center = Offset(cx, dotY))
+        }
 
-        Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
             // Station name - clickable if it has an ID
             if (stop.id.isNotEmpty()) {
                 Text(
@@ -787,46 +833,24 @@ fun StopRow(stop: TrainStop, currentDelay: Int, onStationClick: (String, String)
                 Text(stop.stazione, color = if (isCancelled) C.red else C.text, fontSize = 13.sp, fontWeight = FontWeight.Medium)
             }
 
-            when {
-                isOrigin -> StopTimeRow(
-                    schedLabel = "Part.", sched = if (stop.partenza_teorica > 0) sdf.format(Date(stop.partenza_teorica)) else "—",
-                    real = if (stop.partenzaReale > 0) sdf.format(Date(stop.partenzaReale)) else null,
-                    expected = expectedTime(sdf, stop.partenza_teorica, stop.partenzaReale, depDelay),
-                    delay = depDelay,
-                    platform = stop.binarioEffettivoPartenzaDescrizione ?: stop.binarioProgrammatoPartenzaDescrizione
-                )
-                isDest -> StopTimeRow(
-                    schedLabel = "Arr.", sched = if (stop.arrivo_teorico > 0) sdf.format(Date(stop.arrivo_teorico)) else "—",
-                    real = if (stop.arrivoReale > 0) sdf.format(Date(stop.arrivoReale)) else null,
-                    expected = expectedTime(sdf, stop.arrivo_teorico, stop.arrivoReale, arrDelay),
-                    delay = arrDelay,
-                    platform = stop.binarioEffettivoArrivoDescrizione ?: stop.binarioProgrammatoArrivoDescrizione
-                )
+            if (isCancelled) {
+                Text("SOPPRESSA", color = C.red, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            } else when {
+                isOrigin -> TimeLine("Partenza", sdf, stop.partenza_teorica, stop.partenzaReale, depDelay, reached.departure)
+                isDest -> TimeLine("Arrivo", sdf, stop.arrivo_teorico, stop.arrivoReale, arrDelay, reached.arrival)
                 else -> {
-                    val arrSched = if (stop.arrivo_teorico > 0) sdf.format(Date(stop.arrivo_teorico)) else "—"
-                    val arrReal = if (stop.arrivoReale > 0) sdf.format(Date(stop.arrivoReale)) else null
-                    val arrExpected = expectedTime(sdf, stop.arrivo_teorico, stop.arrivoReale, arrDelay)
-                    val depSched = if (stop.partenza_teorica > 0) sdf.format(Date(stop.partenza_teorica)) else "—"
-                    val depReal = if (stop.partenzaReale > 0) sdf.format(Date(stop.partenzaReale)) else null
-                    val depExpected = expectedTime(sdf, stop.partenza_teorica, stop.partenzaReale, depDelay)
-                    val platform = stop.binarioEffettivoArrivoDescrizione ?: stop.binarioEffettivoPartenzaDescrizione ?: stop.binarioProgrammatoArrivoDescrizione
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("A", color = C.muted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        Text(" $arrSched", color = C.text, fontSize = 11.sp)
-                        if (arrReal != null && arrReal != arrSched) Text(" → $arrReal", color = delayColor(arrDelay), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        else if (arrExpected != null) Text(" ($arrExpected)", color = C.muted, fontSize = 11.sp, fontStyle = FontStyle.Italic)
-                        if (arrDelay > 0) Text(" +${arrDelay}'", color = C.orange, fontSize = 10.sp)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("P", color = C.muted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        Text(" $depSched", color = C.text, fontSize = 11.sp)
-                        if (depReal != null && depReal != depSched) Text(" → $depReal", color = delayColor(depDelay), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        else if (depExpected != null) Text(" ($depExpected)", color = C.muted, fontSize = 11.sp, fontStyle = FontStyle.Italic)
-                        if (platform != null) { Spacer(modifier = Modifier.width(4.dp)); Text("Bin $platform", color = C.accent, fontSize = 10.sp) }
-                    }
+                    TimeLine("Arrivo", sdf, stop.arrivo_teorico, stop.arrivoReale, arrDelay, reached.arrival)
+                    TimeLine("Partenza", sdf, stop.partenza_teorica, stop.partenzaReale, depDelay, reached.departure)
                 }
             }
-            if (isCancelled) Text("SOPPRESSA", color = C.red, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        }
+
+        if (platform != null) {
+            Box(
+                modifier = Modifier.align(Alignment.CenterVertically)
+                    .background(C.accent.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) { Text(platform, color = C.accent, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
         }
     }
 }
@@ -836,15 +860,21 @@ fun expectedTime(sdf: SimpleDateFormat, scheduledMillis: Long, realMillis: Long,
     if (scheduledMillis > 0 && realMillis == 0L && delayMinutes != 0) sdf.format(Date(scheduledMillis + delayMinutes * 60_000L)) else null
 
 @Composable
-fun StopTimeRow(schedLabel: String, sched: String, real: String?, expected: String? = null, delay: Int, platform: String?) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text("$schedLabel: $sched", color = C.text, fontSize = 12.sp)
-        if (real != null && real != sched) Text(" → $real", color = delayColor(delay), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        else if (expected != null) Text(" ($expected)", color = C.muted, fontSize = 12.sp, fontStyle = FontStyle.Italic)
-        if (delay > 0) Text(" +${delay}'", color = C.orange, fontSize = 11.sp)
-        else if (delay < 0) Text(" ${delay}'", color = C.accent, fontSize = 11.sp)
-        else if (real != null) Text(" in orario", color = C.green, fontSize = 11.sp)
-        if (platform != null) { Spacer(modifier = Modifier.width(6.dp)); Text("Bin $platform", color = C.accent, fontSize = 11.sp) }
+fun TimeLine(label: String, sdf: SimpleDateFormat, schedMillis: Long, realMillis: Long, delay: Int, reached: Boolean) {
+    val sched = if (schedMillis > 0) sdf.format(Date(schedMillis)) else "—"
+    val real = if (realMillis > 0) sdf.format(Date(realMillis)) else null
+    val expected = expectedTime(sdf, schedMillis, realMillis, delay)
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
+        Text(label, color = C.muted, fontSize = 12.sp, maxLines = 1, softWrap = false, modifier = Modifier.width(80.dp))
+        Text(sched, color = C.text, fontSize = 12.sp, maxLines = 1, softWrap = false, modifier = Modifier.width(52.dp))
+        when {
+            real != null -> Text(real, color = delayColor(delay), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            // Una stima resta arancione solo se davvero futura: se la fermata è già stata
+            // raggiunta (dedotto dalle fermate successive) l'incertezza non è più "potrebbe
+            // ancora cambiare" ma solo "non abbiamo l'orario esatto", quindi vale la stessa
+            // scala colori del ritardo confermato.
+            expected != null -> Text(expected, color = if (reached) delayColor(delay) else C.orange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        }
     }
 }
 

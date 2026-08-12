@@ -2,6 +2,13 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-08-12 — Elenco fermate ridisegnato
+
+### Modificato
+- **Elenco fermate ridisegnato in stile "tabellone arrivi/partenze"**: arrivo e partenza ora su righe separate ("Arrivo"/"Partenza" per intero, non più abbreviati), con l'orario teorico seguito da quello reale/previsto. Aggiunta una linea tratteggiata verticale che collega le fermate, con pallino pieno per quelle già transitate e vuoto per quelle future. Il binario è ora un badge numerico a destra invece del testo "Bin X" in linea.
+- **Nuova scala colori per il ritardo, usata ovunque nell'app (fermate, card partenze/arrivi, intestazione dettaglio treno)**: verde se il treno è in orario o in ritardo di massimo 1 minuto, rosso se il ritardo supera 1 minuto, blu se il treno è in anticipo (utile per capire se si può ancora prendere una coincidenza). L'orario previsto (stima, non confermato) resta arancione solo per le fermate che il treno non ha ancora raggiunto.
+- **Fermate senza orario reale proprio ma già superate mostrate come in ritardo/anticipo invece che come stima**: alcune fermate minori non hanno mai un orario di transito confermato dai sistemi di Trenitalia (buco di monitoraggio), pur essendo già state superate — lo si capiva dalle fermate successive, che invece un orario confermato lo hanno. Prima venivano mostrate come "previsto" (arancione) anche a fermata abbondantemente superata. Ora, se una fermata successiva nel percorso ha un orario confermato, anche questa viene considerata superata e mostrata con il colore del ritardo invece che arancione.
+
 ## 2026-08-12 — Arrivo e partenza distinguibili nell'elenco fermate
 
 ### Modificato
@@ -176,3 +183,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.14 → v1.5.15: opzione dimensione testo (Normale/Grande/Grandissimo) per l'accessibilità.
 - v1.5.15 → v1.5.16: orario previsto reso più leggibile (parentesi, corsivo, grigio neutro invece della tilde a colore pieno).
 - v1.5.16 → v1.5.17: etichette "A"/"P" per distinguere arrivo e partenza nelle fermate intermedie.
+- v1.5.17 → v1.6.0: elenco fermate ridisegnato (arrivo/partenza su righe distinte, linea tratteggiata, nuova scala colori con il blu per l'anticipo, fix fermate con buchi di monitoraggio mostrate come previsto anche da superate).
