@@ -273,7 +273,15 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val results = ViaggiaTrenoApi.autocompleteStation(query)
                 if (_state.value.stationQuery == query) {
-                    _state.value = _state.value.copy(stationSuggestions = results)
+                    // Il completamento automatico della tastiera (SwiftKey, Gboard...) scrive il
+                    // nome intero della stazione senza passare dalla lista suggerimenti dell'app:
+                    // se il testo coincide già con un risultato, si seleziona da solo.
+                    val exactMatch = results.find { it.name.equals(query.trim(), ignoreCase = true) }
+                    if (exactMatch != null) {
+                        selectStation(exactMatch)
+                    } else {
+                        _state.value = _state.value.copy(stationSuggestions = results)
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Station search error", e)
@@ -338,7 +346,12 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val results = ViaggiaTrenoApi.autocompleteStation(query)
                 if (_state.value.destinationQuery == query) {
-                    _state.value = _state.value.copy(destinationSuggestions = results)
+                    val exactMatch = results.find { it.name.equals(query.trim(), ignoreCase = true) }
+                    if (exactMatch != null) {
+                        selectDestination(exactMatch)
+                    } else {
+                        _state.value = _state.value.copy(destinationSuggestions = results)
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Destination search error", e)

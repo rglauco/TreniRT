@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-08-13 — Selezione automatica stazione con nome esatto
+
+### Corretto
+- **Nessuna stazione selezionata dopo aver usato il completamento automatico della tastiera**: toccando il suggerimento della tastiera (es. SwiftKey, Gboard) il campo si riempie con il nome intero della stazione, ma questo equivale a digitarlo a mano — non a un tap sulla riga della lista suggerimenti dell'app, l'unico modo che selezionava davvero una stazione. Risultato: il nome sembrava inserito correttamente ma non succedeva nulla. Ora, se il testo digitato coincide esattamente (senza distinzione di maiuscole/minuscole) con il nome di una stazione tra i risultati, questa viene selezionata automaticamente, sia per la stazione di partenza/arrivo che per il filtro destinazione.
+
 ## 2026-08-13 — Fix scostamento a capo su schermi stretti
 
 ### Corretto
@@ -199,3 +204,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.17 → v1.6.0: elenco fermate ridisegnato (arrivo/partenza su righe distinte, linea tratteggiata, nuova scala colori con il blu per l'anticipo, fix fermate con buchi di monitoraggio mostrate come previsto anche da superate).
 - v1.6.0 → v1.6.1: scostamento in minuti accanto agli orari confermati, fix testo sovrapposto nell'elenco fermate con la dimensione testo "Grandissimo".
 - v1.6.1 → v1.6.2: fix scostamento in minuti che andava a capo a metà parentesi su schermi stretti con la dimensione testo "Grandissimo".
+- v1.6.2 → v1.6.3: selezione automatica della stazione quando il testo digitato (anche dal completamento della tastiera) coincide esattamente con un nome di stazione.
