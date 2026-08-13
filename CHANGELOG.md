@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-08-13 — Fix ricerca stazione con spazio finale
+
+### Corretto
+- **Ricerca stazione senza risultati con lo spazio finale aggiunto dal completamento della tastiera**: molte tastiere (SwiftKey, Gboard...) inseriscono uno spazio dopo la parola completata, per continuare a scrivere. Quel testo veniva passato tale e quale all'API di autocompletamento, che non trova nessuna stazione se la query ha uno spazio in fondo — quindi la ricerca risultava vuota anche per un nome corretto, oltre a impedire la selezione automatica introdotta poco fa. Ora lo spazio iniziale/finale viene rimosso prima di interrogare l'API, per il campo stazione e per il filtro destinazione.
+
 ## 2026-08-13 — Selezione automatica stazione con nome esatto
 
 ### Corretto
@@ -205,3 +210,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.6.0 → v1.6.1: scostamento in minuti accanto agli orari confermati, fix testo sovrapposto nell'elenco fermate con la dimensione testo "Grandissimo".
 - v1.6.1 → v1.6.2: fix scostamento in minuti che andava a capo a metà parentesi su schermi stretti con la dimensione testo "Grandissimo".
 - v1.6.2 → v1.6.3: selezione automatica della stazione quando il testo digitato (anche dal completamento della tastiera) coincide esattamente con un nome di stazione.
+- v1.6.3 → v1.6.4: fix ricerca stazione senza risultati quando la tastiera aggiunge uno spazio finale dopo il completamento automatico.

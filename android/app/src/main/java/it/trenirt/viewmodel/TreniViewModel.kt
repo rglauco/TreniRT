@@ -270,13 +270,17 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         stationSearchJob = viewModelScope.launch(Dispatchers.IO) {
             delay(300)
             if (_state.value.stationQuery != query) return@launch
+            // Il completamento automatico della tastiera (SwiftKey, Gboard...) aggiunge uno
+            // spazio finale dopo la parola scelta: l'API di autocompletamento non lo tollera
+            // e non trova nulla, quindi va rimosso prima di interrogarla.
+            val trimmedQuery = query.trim()
             try {
-                val results = ViaggiaTrenoApi.autocompleteStation(query)
+                val results = ViaggiaTrenoApi.autocompleteStation(trimmedQuery)
                 if (_state.value.stationQuery == query) {
-                    // Il completamento automatico della tastiera (SwiftKey, Gboard...) scrive il
-                    // nome intero della stazione senza passare dalla lista suggerimenti dell'app:
-                    // se il testo coincide già con un risultato, si seleziona da solo.
-                    val exactMatch = results.find { it.name.equals(query.trim(), ignoreCase = true) }
+                    // Il completamento automatico della tastiera scrive il nome intero della
+                    // stazione senza passare dalla lista suggerimenti dell'app: se il testo
+                    // coincide già con un risultato, si seleziona da solo.
+                    val exactMatch = results.find { it.name.equals(trimmedQuery, ignoreCase = true) }
                     if (exactMatch != null) {
                         selectStation(exactMatch)
                     } else {
@@ -343,10 +347,11 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         destinationSearchJob = viewModelScope.launch(Dispatchers.IO) {
             delay(300)
             if (_state.value.destinationQuery != query) return@launch
+            val trimmedQuery = query.trim()
             try {
-                val results = ViaggiaTrenoApi.autocompleteStation(query)
+                val results = ViaggiaTrenoApi.autocompleteStation(trimmedQuery)
                 if (_state.value.destinationQuery == query) {
-                    val exactMatch = results.find { it.name.equals(query.trim(), ignoreCase = true) }
+                    val exactMatch = results.find { it.name.equals(trimmedQuery, ignoreCase = true) }
                     if (exactMatch != null) {
                         selectDestination(exactMatch)
                     } else {
