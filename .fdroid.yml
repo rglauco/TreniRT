@@ -127,7 +127,14 @@ Builds:
     gradle:
       - yes
 
+  - versionName: 1.6.2
+    versionCode: 27
+    commit: d687ef2dfe67568265df53c50a5c4d38cc285227
+    subdir: android/app
+    gradle:
+      - yes
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.6.1
-CurrentVersionCode: 26
+CurrentVersion: 1.6.2
+CurrentVersionCode: 27
