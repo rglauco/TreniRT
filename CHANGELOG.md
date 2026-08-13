@@ -2,6 +2,14 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-08-13 — Scostamento in minuti per gli orari confermati
+
+### Aggiunto
+- **Scostamento in minuti accanto a ogni orario confermato di arrivo/partenza**: finora il ritardo/anticipo per singola fermata era leggibile solo dal colore dell'orario. Ora accanto all'orario reale compare anche il valore in minuti tra parentesi (es. "07:56 (+5')" in rosso, "08:29 (-2')" in blu se in anticipo), senza nulla in più quando la fermata è perfettamente puntuale.
+
+### Corretto
+- **Testo sovrapposto nell'elenco fermate con la dimensione testo "Grandissimo"**: le colonne dell'orario avevano larghezza fissa in dp mentre il testo scala in sp con la dimensione scelta, così a "Grandissimo" l'orario teorico e quello reale finivano incollati o parzialmente sovrapposti. Ora le colonne scalano insieme al testo e c'è uno spazio minimo garantito tra le colonne. Rimosso anche il grassetto dall'orario reale/previsto, lasciando solo il colore a indicare il ritardo: più leggibile, specie alle dimensioni maggiori.
+
 ## 2026-08-12 — Elenco fermate ridisegnato
 
 ### Modificato
@@ -184,3 +192,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.15 → v1.5.16: orario previsto reso più leggibile (parentesi, corsivo, grigio neutro invece della tilde a colore pieno).
 - v1.5.16 → v1.5.17: etichette "A"/"P" per distinguere arrivo e partenza nelle fermate intermedie.
 - v1.5.17 → v1.6.0: elenco fermate ridisegnato (arrivo/partenza su righe distinte, linea tratteggiata, nuova scala colori con il blu per l'anticipo, fix fermate con buchi di monitoraggio mostrate come previsto anche da superate).
+- v1.6.0 → v1.6.1: scostamento in minuti accanto agli orari confermati, fix testo sovrapposto nell'elenco fermate con la dimensione testo "Grandissimo".

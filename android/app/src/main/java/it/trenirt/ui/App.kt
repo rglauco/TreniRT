@@ -864,16 +864,25 @@ fun TimeLine(label: String, sdf: SimpleDateFormat, schedMillis: Long, realMillis
     val sched = if (schedMillis > 0) sdf.format(Date(schedMillis)) else "—"
     val real = if (realMillis > 0) sdf.format(Date(realMillis)) else null
     val expected = expectedTime(sdf, schedMillis, realMillis, delay)
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
-        Text(label, color = C.muted, fontSize = 12.sp, maxLines = 1, softWrap = false, modifier = Modifier.width(80.dp))
-        Text(sched, color = C.text, fontSize = 12.sp, maxLines = 1, softWrap = false, modifier = Modifier.width(52.dp))
+    // Le colonne sono larghe in dp fisso, ma il testo scala in sp con fontScale: senza
+    // riscalare anche la larghezza, a "Grandissimo" il testo eccede il box e si sovrappone
+    // alla colonna successiva.
+    val fontScale = LocalDensity.current.fontScale
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, color = C.muted, fontSize = 12.sp, maxLines = 1, softWrap = false, modifier = Modifier.width(80.dp * fontScale))
+        Text(sched, color = C.text, fontSize = 12.sp, maxLines = 1, softWrap = false, modifier = Modifier.width(52.dp * fontScale))
         when {
-            real != null -> Text(real, color = delayColor(delay), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            real != null -> {
+                Text(real, color = delayColor(delay), fontSize = 12.sp)
+                if (delay != 0) {
+                    Text(if (delay > 0) "(+${delay}')" else "(${delay}')", color = delayColor(delay), fontSize = 11.sp)
+                }
+            }
             // Una stima resta arancione solo se davvero futura: se la fermata è già stata
             // raggiunta (dedotto dalle fermate successive) l'incertezza non è più "potrebbe
             // ancora cambiare" ma solo "non abbiamo l'orario esatto", quindi vale la stessa
             // scala colori del ritardo confermato.
-            expected != null -> Text(expected, color = if (reached) delayColor(delay) else C.orange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            expected != null -> Text(expected, color = if (reached) delayColor(delay) else C.orange, fontSize = 12.sp)
         }
     }
 }
