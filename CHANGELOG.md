@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-08-13 — Fix scostamento a capo su schermi stretti
+
+### Corretto
+- **Scostamento in minuti spezzato a metà su schermi stretti con la dimensione testo "Grandissimo"**: su smartphone con schermo poco largo, lo spazio rimasto nella riga per il testo tra parentesi (es. "(+2')") poteva non bastare per stargli su una riga sola, mandandolo a capo a metà parentesi e disallineando il resto della riga/badge. Ora quel testo (e l'orario reale/previsto) resta sempre su una riga sola, troncato con "…" se lo spazio non basta, invece di andare a capo.
+
 ## 2026-08-13 — Scostamento in minuti per gli orari confermati
 
 ### Aggiunto
@@ -193,3 +198,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.5.16 → v1.5.17: etichette "A"/"P" per distinguere arrivo e partenza nelle fermate intermedie.
 - v1.5.17 → v1.6.0: elenco fermate ridisegnato (arrivo/partenza su righe distinte, linea tratteggiata, nuova scala colori con il blu per l'anticipo, fix fermate con buchi di monitoraggio mostrate come previsto anche da superate).
 - v1.6.0 → v1.6.1: scostamento in minuti accanto agli orari confermati, fix testo sovrapposto nell'elenco fermate con la dimensione testo "Grandissimo".
+- v1.6.1 → v1.6.2: fix scostamento in minuti che andava a capo a metà parentesi su schermi stretti con la dimensione testo "Grandissimo".

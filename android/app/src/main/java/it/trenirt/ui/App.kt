@@ -873,16 +873,22 @@ fun TimeLine(label: String, sdf: SimpleDateFormat, schedMillis: Long, realMillis
         Text(sched, color = C.text, fontSize = 12.sp, maxLines = 1, softWrap = false, modifier = Modifier.width(52.dp * fontScale))
         when {
             real != null -> {
-                Text(real, color = delayColor(delay), fontSize = 12.sp)
+                Text(real, color = delayColor(delay), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (delay != 0) {
-                    Text(if (delay > 0) "(+${delay}')" else "(${delay}')", color = delayColor(delay), fontSize = 11.sp)
+                    // Senza maxLines/overflow, su schermi stretti a "Grandissimo" lo spazio
+                    // residuo nella riga può finire prima che il testo entri su una riga sola,
+                    // mandandolo a capo a metà (es. "(+2'" e ")" separati).
+                    Text(
+                        if (delay > 0) "(+${delay}')" else "(${delay}')", color = delayColor(delay), fontSize = 11.sp,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
             // Una stima resta arancione solo se davvero futura: se la fermata è già stata
             // raggiunta (dedotto dalle fermate successive) l'incertezza non è più "potrebbe
             // ancora cambiare" ma solo "non abbiamo l'orario esatto", quindi vale la stessa
             // scala colori del ritardo confermato.
-            expected != null -> Text(expected, color = if (reached) delayColor(delay) else C.orange, fontSize = 12.sp)
+            expected != null -> Text(expected, color = if (reached) delayColor(delay) else C.orange, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
