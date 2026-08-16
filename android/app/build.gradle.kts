@@ -49,6 +49,15 @@ android {
         }
     }
 
+    // AGP embeds a "Dependency metadata" (SDK Console) block in the APK signing
+    // block by default. F-Droid's scanner rejects any signing block it didn't
+    // produce itself, which breaks the reproducible-build comparison against
+    // the GitHub release APK — so keep it out of both artifact types.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

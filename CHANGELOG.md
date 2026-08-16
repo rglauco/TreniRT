@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-08-16 — Fix build riproducibile per F-Droid
+
+### Corretto
+- **Blocco "Dependency metadata" nell'APK firmata**: l'Android Gradle Plugin inserisce di default un blocco extra nel signing block dell'APK con l'elenco delle dipendenze (per la SDK Console di Google Play). Lo scanner di F-Droid rifiuta qualunque blocco che il suo build non produce, facendo fallire il confronto tra l'APK di release e il build riproducibile. Ora quel blocco è disabilitato sia per l'APK che per l'App Bundle.
+
 ## 2026-08-13 — Fix ricerca stazione con spazio finale
 
 ### Corretto
@@ -211,3 +216,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.6.1 → v1.6.2: fix scostamento in minuti che andava a capo a metà parentesi su schermi stretti con la dimensione testo "Grandissimo".
 - v1.6.2 → v1.6.3: selezione automatica della stazione quando il testo digitato (anche dal completamento della tastiera) coincide esattamente con un nome di stazione.
 - v1.6.3 → v1.6.4: fix ricerca stazione senza risultati quando la tastiera aggiunge uno spazio finale dopo il completamento automatico.
+- v1.6.4 → v1.6.5: rimosso il blocco "Dependency metadata" dall'APK, che rompeva la verifica di build riproducibile su F-Droid.
