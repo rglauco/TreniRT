@@ -22,8 +22,8 @@ android {
         applicationId = "it.trenirt"
         minSdk = 26
         targetSdk = 34
-        versionCode = 29
-        versionName = "1.6.4"
+        versionCode = 30
+        versionName = "1.6.5"
     }
 
     signingConfigs {
