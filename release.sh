@@ -46,13 +46,16 @@ sed_i() {
   fi
 }
 
-# Inserts a new Builds entry before "AutoUpdateMode:" and updates
+# Replaces the single Builds entry (F-Droid only needs the current version's
+# recipe now that Binaries + AllowedAPKSigningKeys handle reproducible-build
+# verification against the GitHub release APK) and updates
 # CurrentVersion/CurrentVersionCode in a .fdroid.yml-shaped file.
 update_fdroid_yaml() {
   local file="$1" version="$2" code="$3" hash="$4"
   local entry_file
   entry_file="$(mktemp)"
   {
+    printf 'Builds:\n'
     printf '  - versionName: %s\n' "$version"
     printf '    versionCode: %s\n' "$code"
     printf '    commit: %s\n' "$hash"
@@ -63,10 +66,9 @@ update_fdroid_yaml() {
   } > "$entry_file"
 
   awk -v entryfile="$entry_file" '
-    /^AutoUpdateMode:/ && !done {
-      while ((getline line < entryfile) > 0) print line
-      done = 1
-    }
+    /^Builds:/ { in_builds = 1; while ((getline line < entryfile) > 0) print line; next }
+    in_builds && /^[A-Za-z]/ { in_builds = 0 }
+    in_builds { next }
     { print }
   ' "$file" > "${file}.new"
   mv "${file}.new" "$file"
