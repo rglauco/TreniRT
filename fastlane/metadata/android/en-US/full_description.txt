@@ -1,0 +1,13 @@
+TreniRT shows schedules, departures, arrivals and delays for Italian trains in real time, using the same public data from Trenitalia's ViaggiaTreno infrastructure — the same data available on the official website and app.
+
+Main features:
+
+* Departures and arrivals by station, at any time
+* Search by train number, with all stops and the real-time delay
+* Filter by destination station, with automatic search for connections/train changes when there is no direct train
+* History of recent searches by station and by train number
+* Light and dark theme
+* Automatic (infinite scroll) and manual data refresh
+* No ads, no trackers, no personal data collection
+
+TreniRT is an independent, hobby project, not affiliated with, sponsored by, or endorsed by Trenitalia, RFI, or Gruppo FS.
