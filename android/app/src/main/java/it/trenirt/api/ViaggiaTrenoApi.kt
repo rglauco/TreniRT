@@ -104,7 +104,8 @@ object ViaggiaTrenoApi {
         val nonPartito: Boolean = false,
         val compNumeroTreno: String = "",
         val dataPartenzaTreno: Long = 0,
-        val riprogrammazione: String = "N"
+        val riprogrammazione: String = "N",
+        val codiceCliente: Int = 0
     )
 
     private fun formatVtTime(date: Date): String {
@@ -144,7 +145,12 @@ object ViaggiaTrenoApi {
         val fermate: List<TrainStop> = emptyList(),
         val compOrarioPartenza: String = "",
         val compOrarioArrivo: String = "",
-        val nonPartito: Boolean = false
+        val nonPartito: Boolean = false,
+        val codiceCliente: Int = 0,
+        // Non presente nelle risposte di ViaggiaTreno (sempre null lì) — valorizzato solo
+        // quando il dettaglio arriva da una fonte diversa, es. ItaloApi, per cui non esiste
+        // un codiceCliente da mappare tramite Operatori.
+        val operatore: String? = null
     )
 
     data class TrainStop(
@@ -187,4 +193,18 @@ object ViaggiaTrenoApi {
         cal.set(java.util.Calendar.MILLISECOND, 0)
         return cal.timeInMillis
     }
+}
+
+/** Mappa il campo `codiceCliente` di ViaggiaTreno (identifica l'impresa ferroviaria che
+ *  opera il treno, non necessariamente Trenitalia) al nome dell'operatore. Tabella non
+ *  esaustiva, ricostruita dalla documentazione della community — il nome effettivamente
+ *  registrato presso RFI può differire. I codici Trenitalia (1, 2, 4, 18) non sono inclusi
+ *  di proposito: è l'operatore predefinito, quindi non serve segnalarlo in UI. */
+object Operatori {
+    private val NOMI = mapOf(
+        63 to "Trenord",
+        64 to "TILO",
+        910 to "Ferrovie del Sud Est"
+    )
+    fun nome(codiceCliente: Int): String? = NOMI[codiceCliente]
 }

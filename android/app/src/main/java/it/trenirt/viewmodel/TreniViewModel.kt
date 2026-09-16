@@ -8,6 +8,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import it.trenirt.api.ItaloApi
+import it.trenirt.api.ItaloApi.toTrainDetail
 import it.trenirt.api.ViaggiaTrenoApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -140,6 +142,9 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         private const val MAX_RECENT = 10
         private const val MIN_TRANSFER_MS = 60_000L // 1 minute — don't suggest impossible connections
         private const val MAX_TRANSFER_WAIT_MS = 90 * 60_000L // 90 minutes — cap how long a wait is worth suggesting
+        // Sentinel used as TrainSuggestion.originCode to mark a result that came from Italo
+        // instead of ViaggiaTreno — Italo trains have no ViaggiaTreno origin station code at all.
+        private const val ITALO_ORIGIN_CODE = "ITALO"
     }
 
     private val _state = MutableStateFlow(UiState())
@@ -824,13 +829,50 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             if (_state.value.trainQuery != query) return@launch
             try {
                 val results = ViaggiaTrenoApi.searchTrain(query)
+                // ViaggiaTreno non conosce affatto i treni Italo (operatore "open access" fuori
+                // dal giro Trenitalia/RFI) — se non trova nulla, proviamo l'endpoint Italo prima
+                // di arrenderci. Un solo risultato sintetico, marcato con ITALO_ORIGIN_CODE.
+                val finalResults = if (results.isEmpty() && query.trim().all { it.isDigit() }) {
+                    val italoTrain = try {
+                        ItaloApi.searchTrain(query.trim())
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Italo search error", e)
+                        null
+                    }
+                    if (italoTrain != null) {
+                        listOf(ViaggiaTrenoApi.TrainSuggestion(
+                            number = italoTrain.TrainNumber,
+                            originCode = ITALO_ORIGIN_CODE,
+                            originName = "Italo — ${italoTrain.DepartureStationDescription} → ${italoTrain.ArrivalStationDescription}"
+                        ))
+                    } else results
+                } else results
                 if (_state.value.trainQuery == query) {
-                    _state.value = _state.value.copy(trainSuggestions = results)
+                    _state.value = _state.value.copy(trainSuggestions = finalResults)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Train search error", e)
             }
         }
+    }
+
+    private fun showItaloTrainDetail(number: String, recordAs: ViaggiaTrenoApi.TrainSuggestion) {
+        val italoTrain = try {
+            ItaloApi.searchTrain(number)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading Italo train detail", e)
+            null
+        }
+        if (italoTrain == null) {
+            _state.value = _state.value.copy(isLoading = false, error = "Treno $number non trovato")
+            return
+        }
+        _state.value = _state.value.copy(
+            trainDetail = italoTrain.toTrainDetail(), isLoading = false, showDetail = true,
+            currentTrainOriginCode = ITALO_ORIGIN_CODE, currentTrainNumber = italoTrain.TrainNumber.toIntOrNull() ?: 0,
+            currentTrainReferenceDay = 0L
+        )
+        recordRecentTrain(recordAs)
     }
 
     private suspend fun showTrainDetail(originCode: String, number: Int, referenceDay: Long, recordAs: ViaggiaTrenoApi.TrainSuggestion) {
@@ -851,6 +893,10 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
     fun selectTrain(suggestion: ViaggiaTrenoApi.TrainSuggestion) {
         _state.value = _state.value.copy(trainSuggestions = emptyList(), isLoading = true, showDetail = false, mode = "train")
         viewModelScope.launch(Dispatchers.IO) {
+            if (suggestion.originCode == ITALO_ORIGIN_CODE) {
+                showItaloTrainDetail(suggestion.number, suggestion)
+                return@launch
+            }
             val num = suggestion.number.toIntOrNull() ?: return@launch
             showTrainDetail(suggestion.originCode, num, suggestion.resolvedReferenceDay(), suggestion)
         }
@@ -861,6 +907,12 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
     fun selectRecentTrain(suggestion: ViaggiaTrenoApi.TrainSuggestion) {
         _state.value = _state.value.copy(isLoading = true, showDetail = false, mode = "train")
         viewModelScope.launch(Dispatchers.IO) {
+            // Italo non ha un autocomplete separato dal dettaglio: rifare la ricerca È il
+            // dettaglio, quindi si passa direttamente da lì invece che da ViaggiaTreno.
+            if (suggestion.originCode == ITALO_ORIGIN_CODE) {
+                showItaloTrainDetail(suggestion.number, suggestion)
+                return@launch
+            }
             val fresh = try {
                 ViaggiaTrenoApi.searchTrain(suggestion.number)
                     .let { results -> results.firstOrNull { it.originCode == suggestion.originCode } ?: results.firstOrNull() }
@@ -902,6 +954,20 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         val referenceDay = _state.value.currentTrainReferenceDay
         _state.value = _state.value.copy(isLoading = true)
         viewModelScope.launch(Dispatchers.IO) {
+            if (originCode == ITALO_ORIGIN_CODE) {
+                val italoTrain = try {
+                    ItaloApi.searchTrain(trainNumber.toString())
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error refreshing Italo train detail", e)
+                    null
+                }
+                _state.value = if (italoTrain != null) {
+                    _state.value.copy(trainDetail = italoTrain.toTrainDetail(), isLoading = false)
+                } else {
+                    _state.value.copy(isLoading = false, error = "Errore di caricamento")
+                }
+                return@launch
+            }
             try {
                 val detail = ViaggiaTrenoApi.getTrainDetail(originCode, trainNumber, referenceDay)
                 _state.value = _state.value.copy(trainDetail = detail, isLoading = false)

@@ -48,6 +48,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import it.trenirt.BuildConfig
 import it.trenirt.api.ViaggiaTrenoApi
+import it.trenirt.api.Operatori
 import it.trenirt.api.ViaggiaTrenoApi.StationTrain
 import it.trenirt.api.ViaggiaTrenoApi.TrainDetail
 import it.trenirt.api.ViaggiaTrenoApi.TrainStop
@@ -586,6 +587,11 @@ fun TrainCard(
                     Text("Bin $platform", color = C.accent, fontSize = 12.sp,
                         modifier = Modifier.background(C.accent.copy(alpha = 0.15f), RoundedCornerShape(4.dp)).padding(horizontal = 4.dp, vertical = 1.dp))
                 }
+                Operatori.nome(train.codiceCliente)?.let { operatorLabel ->
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(operatorLabel, color = C.muted, fontSize = 12.sp,
+                        modifier = Modifier.background(C.muted.copy(alpha = 0.15f), RoundedCornerShape(4.dp)).padding(horizontal = 4.dp, vertical = 1.dp))
+                }
                 Spacer(modifier = Modifier.weight(1f))
                 Text(delayText, color = delayCol, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
@@ -662,6 +668,7 @@ fun HelpScreen(onBack: () -> Unit) {
 
             HelpTitle("Cercare per numero treno")
             HelpBody("Scrivi il numero e vedi tutte le fermate di quel treno, con orari previsti e reali, ritardo e dove si trova adesso. Funziona anche per un treno partito da ore.")
+            HelpBody("I treni Italo non sono tracciati da ViaggiaTreno: se il numero cercato non viene trovato lì, l'app prova automaticamente la fonte dati di Italo. È una fonte non ufficiale e meno completa (niente tabellone stazioni, solo ricerca per numero), quindi i dati mostrati per Italo possono essere meno dettagliati o occasionalmente non disponibili.")
 
             HelpTitle("Ricerche recenti")
             HelpBody("Le ultime combinazioni partenza→destinazione e gli ultimi numeri treno cercati restano salvati come scorciatoie, per non dover riscrivere tutto quando sei di corsa.")
@@ -722,8 +729,13 @@ fun TrainDetailScreen(detail: TrainDetail, isLoading: Boolean, onBack: () -> Uni
             }
         }
 
+        val operatorLabel = detail.operatore ?: Operatori.nome(detail.codiceCliente)
+
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-            Text(detail.categoria, color = C.muted, fontSize = 13.sp)
+            Text(
+                if (operatorLabel != null) "${detail.categoria} · $operatorLabel" else detail.categoria,
+                color = C.muted, fontSize = 13.sp
+            )
             Text("${detail.origine} → ${detail.destinazione}", color = C.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             if (!isCancelled) {
                 Text(
@@ -820,8 +832,10 @@ fun StopRow(stop: TrainStop, currentDelay: Int, reached: StopReached, onStationC
         }
 
         Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
-            // Station name - clickable if it has an ID
-            if (stop.id.isNotEmpty()) {
+            // Station name - clickable only for a ViaggiaTreno-style code ("S01700"): stops from
+            // a non-ViaggiaTreno source (e.g. ItaloApi) carry that operator's own station codes,
+            // which onStationClick would look up on ViaggiaTreno and find nothing for.
+            if (stop.id.startsWith("S")) {
                 Text(
                     stop.stazione,
                     color = C.accent,

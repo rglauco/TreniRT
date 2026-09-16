@@ -2,6 +2,12 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-09-16 — Operatore del treno (Trenord, TILO, Italo)
+
+### Aggiunto
+- **Operatore ferroviario indicato per ogni treno**: ViaggiaTreno mostra anche i treni di operatori diversi da Trenitalia (es. i regionali Trenord in Lombardia) senza segnalarlo in alcun modo, facendoli sembrare tutti treni Trenitalia. Ora, quando il treno appartiene a un altro operatore (Trenord, TILO, Ferrovie del Sud Est), il nome compare accanto alla categoria sia nella lista dei treni in stazione sia nel dettaglio del singolo treno.
+- **Ricerca per numero treno estesa a Italo**: i treni Italo non sono affatto tracciati da ViaggiaTreno (è un operatore "open access", fuori dal giro Trenitalia/RFI). Ora, se la ricerca per numero non trova nulla, l'app prova automaticamente la fonte dati di Italo e mostra comunque fermate, orari e ritardo — segnalando chiaramente che il dato viene da una fonte non ufficiale e meno completa (niente tabellone stazioni, solo ricerca per numero).
+
 ## 2026-08-16 — Fix build riproducibile per F-Droid
 
 ### Corretto
@@ -217,3 +223,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.6.2 → v1.6.3: selezione automatica della stazione quando il testo digitato (anche dal completamento della tastiera) coincide esattamente con un nome di stazione.
 - v1.6.3 → v1.6.4: fix ricerca stazione senza risultati quando la tastiera aggiunge uno spazio finale dopo il completamento automatico.
 - v1.6.4 → v1.6.5: rimosso il blocco "Dependency metadata" dall'APK, che rompeva la verifica di build riproducibile su F-Droid.
+- v1.6.5 → v1.7.0: operatore ferroviario (Trenord, TILO, Italo) mostrato per ogni treno, ricerca per numero estesa a Italo tramite una fonte dati non ufficiale.
