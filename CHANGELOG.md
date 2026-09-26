@@ -2,6 +2,19 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-09-26 — App in inglese, traffico HTTP limitato a ViaggiaTreno
+
+### Aggiunto
+- **Interfaccia in inglese**: finora tutti i testi erano scritti in italiano direttamente nel codice, quindi l'app restava in italiano anche su un telefono in un'altra lingua (segnalato nella review di inclusione su F-Droid da un tester con il telefono in ucraino). Ora i testi sono in `strings.xml`, con l'inglese come lingua predefinita e l'italiano in `values-it`: chi ha il telefono in italiano vede l'app come prima, tutti gli altri la vedono in inglese. Da Android 13 in poi la lingua dell'app si può anche scegliere dalle impostazioni di sistema, indipendentemente da quella del telefono.
+
+### Modificato
+- **Traffico in chiaro consentito solo verso ViaggiaTreno**: finora l'app permetteva connessioni HTTP non cifrate verso qualunque server, perché ViaggiaTreno funziona solo in HTTP (https://www.viaggiatreno.it risponde con un redirect verso http://). Ora una network security config limita l'HTTP in chiaro al solo `www.viaggiatreno.it`: ogni altra connessione, compresa la fonte dati Italo, deve per forza passare da HTTPS.
+- **Descrizione dello store più completa** (richiesto nella review di inclusione su F-Droid): ora elenca esplicitamente le fonti dati e le connessioni di rete (ViaggiaTreno in HTTP, fallback non ufficiale su Italo in HTTPS, nessuna connessione all'avvio) e le lingue disponibili.
+
+### Corretto
+- **Errori invisibili nella ricerca per numero treno**: se il treno scelto non veniva trovato (es. una ricerca recente di un treno che oggi non circola) o il caricamento falliva, il messaggio d'errore veniva preparato ma la scheda "Numero treno" non lo mostrava mai: lo spinner spariva e non succedeva nulla. Ora il messaggio compare sotto il campo di ricerca, separato da quelli della scheda Stazione per non mescolarli passando da una scheda all'altra.
+- **Treno trovato ma senza dati in tempo reale**: quando ViaggiaTreno riconosce il numero ma per quella corsa non ha ancora dati, l'app restava ferma senza spiegazioni. Ora lo dice esplicitamente.
+
 ## 2026-09-16 — Operatore del treno (Trenord, TILO, Italo)
 
 ### Aggiunto
@@ -224,3 +237,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.6.3 → v1.6.4: fix ricerca stazione senza risultati quando la tastiera aggiunge uno spazio finale dopo il completamento automatico.
 - v1.6.4 → v1.6.5: rimosso il blocco "Dependency metadata" dall'APK, che rompeva la verifica di build riproducibile su F-Droid.
 - v1.6.5 → v1.7.0: operatore ferroviario (Trenord, TILO, Italo) mostrato per ogni treno, ricerca per numero estesa a Italo tramite una fonte dati non ufficiale.
+- v1.7.0 → v1.7.1: interfaccia in inglese (italiano se il telefono è in italiano), traffico HTTP in chiaro consentito solo verso ViaggiaTreno, descrizione con fonti dati e connessioni di rete, errori della ricerca per numero treno finalmente visibili.

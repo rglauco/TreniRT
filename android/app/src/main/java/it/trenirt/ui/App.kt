@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -46,7 +47,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.annotation.StringRes
 import it.trenirt.BuildConfig
+import it.trenirt.R
 import it.trenirt.api.ViaggiaTrenoApi
 import it.trenirt.api.Operatori
 import it.trenirt.api.ViaggiaTrenoApi.StationTrain
@@ -55,6 +58,7 @@ import it.trenirt.api.ViaggiaTrenoApi.TrainStop
 import it.trenirt.viewmodel.FontSizeOption
 import it.trenirt.viewmodel.StationListFilter
 import it.trenirt.viewmodel.TreniViewModel
+import it.trenirt.viewmodel.UiMessage
 import it.trenirt.viewmodel.UiState
 import java.text.SimpleDateFormat
 import java.util.*
@@ -97,6 +101,9 @@ object C {
         accent = p.accent; green = p.green; red = p.red; orange = p.orange
     }
 }
+
+@Composable
+private fun UiMessage.text(): String = stringResource(resId, *args.toTypedArray())
 
 fun delayColor(delay: Int): Color = when {
     delay < 0 -> C.accent
@@ -180,7 +187,10 @@ private fun FontSizeButton(current: FontSizeOption, onSelect: (FontSizeOption) -
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             FontSizeOption.entries.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(if (option == current) "✓ ${option.label}" else option.label) },
+                    text = {
+                        val label = stringResource(option.labelRes)
+                        Text(if (option == current) "✓ $label" else label)
+                    },
                     onClick = { onSelect(option); expanded = false }
                 )
             }
@@ -195,15 +205,15 @@ fun StationSearchTab(state: UiState, vm: TreniViewModel) {
     val hasStation = state.selectedStation != null
     // Tab switcher
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        TabButton("Stazione", true, {}, Modifier.weight(1f))
-        TabButton("Numero Treno", false, { vm.switchToTrainMode() }, Modifier.weight(1f))
+        TabButton(stringResource(R.string.tab_station), true, {}, Modifier.weight(1f))
+        TabButton(stringResource(R.string.tab_train_number), false, { vm.switchToTrainMode() }, Modifier.weight(1f))
     }
     Spacer(modifier = Modifier.height(8.dp))
 
     OutlinedTextField(
         value = state.stationQuery,
         onValueChange = { vm.onStationQueryChanged(it) },
-        label = { Text("Cerca stazione...") },
+        label = { Text(stringResource(R.string.station_search_hint)) },
         modifier = Modifier.fillMaxWidth(),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = C.accent, unfocusedBorderColor = C.border,
@@ -212,7 +222,7 @@ fun StationSearchTab(state: UiState, vm: TreniViewModel) {
         ),
         singleLine = true,
         trailingIcon = if (hasStation) {
-            { IconButton(onClick = { vm.clearStation() }) { Icon(Icons.Filled.Close, contentDescription = "Cancella", tint = C.muted) } }
+            { IconButton(onClick = { vm.clearStation() }) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cd_clear), tint = C.muted) } }
         } else null,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         keyboardActions = KeyboardActions(onSearch = {
@@ -240,7 +250,7 @@ fun StationSearchTab(state: UiState, vm: TreniViewModel) {
     // Recent origin→destination shortcuts — fastest path when in a hurry
     if (!hasStation && state.stationQuery.isEmpty() && state.recentTrips.isNotEmpty()) {
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Ricerche recenti", color = C.muted, fontSize = 12.sp)
+        Text(stringResource(R.string.recent_searches), color = C.muted, fontSize = 12.sp)
         Column(modifier = Modifier.fillMaxWidth()) {
             state.recentTrips.forEach { trip ->
                 Row(
@@ -263,7 +273,7 @@ fun StationSearchTab(state: UiState, vm: TreniViewModel) {
         OutlinedTextField(
             value = state.destinationQuery,
             onValueChange = { vm.onDestinationQueryChanged(it) },
-            label = { Text(if (state.filter == StationListFilter.DEPARTURES) "Destinazione (opzionale)" else "Provenienza (opzionale)") },
+            label = { Text(stringResource(if (state.filter == StationListFilter.DEPARTURES) R.string.destination_optional else R.string.origin_optional)) },
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = C.accent, unfocusedBorderColor = C.border,
@@ -272,7 +282,7 @@ fun StationSearchTab(state: UiState, vm: TreniViewModel) {
             ),
             singleLine = true,
             trailingIcon = if (destinationSelected) {
-                { IconButton(onClick = { vm.clearDestination() }) { Icon(Icons.Filled.Close, contentDescription = "Rimuovi filtro", tint = C.muted) } }
+                { IconButton(onClick = { vm.clearDestination() }) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cd_remove_filter), tint = C.muted) } }
             } else null,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = {
@@ -297,7 +307,7 @@ fun StationSearchTab(state: UiState, vm: TreniViewModel) {
         if (destinationSelected) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 TextButton(onClick = { vm.swapStations() }) {
-                    Text("⇅ Inverti partenza/destinazione", color = C.accent, fontSize = 12.sp)
+                    Text(stringResource(R.string.swap_stations), color = C.accent, fontSize = 12.sp)
                 }
             }
         }
@@ -305,12 +315,12 @@ fun StationSearchTab(state: UiState, vm: TreniViewModel) {
 
     // Filters + time
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-        FilterButton("Partenze", state.filter == StationListFilter.DEPARTURES) { vm.setFilter(StationListFilter.DEPARTURES) }
-        FilterButton("Arrivi", state.filter == StationListFilter.ARRIVALS) { vm.setFilter(StationListFilter.ARRIVALS) }
+        FilterButton(stringResource(R.string.departures), state.filter == StationListFilter.DEPARTURES) { vm.setFilter(StationListFilter.DEPARTURES) }
+        FilterButton(stringResource(R.string.arrivals), state.filter == StationListFilter.ARRIVALS) { vm.setFilter(StationListFilter.ARRIVALS) }
         Spacer(modifier = Modifier.weight(1f))
         if (hasStation) {
             IconButton(onClick = { vm.loadStationTrains() }, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.Filled.Refresh, contentDescription = "Aggiorna", tint = C.accent)
+                Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.cd_refresh), tint = C.accent)
             }
         }
         TimePickerField(state.timeOverride, vm::setTimeOverride)
@@ -321,23 +331,22 @@ fun StationSearchTab(state: UiState, vm: TreniViewModel) {
             CircularProgressIndicator(color = C.accent)
         }
     } else if (state.error != null && state.stationTrains.isEmpty()) {
-        Text(state.error!!, color = C.orange, modifier = Modifier.padding(16.dp))
+        Text(state.error!!.text(), color = C.orange, modifier = Modifier.padding(16.dp))
     } else if (state.isCheckingStops) {
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             CircularProgressIndicator(color = C.accent, modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Verifica fermate...", color = C.muted, fontSize = 13.sp)
+            Text(stringResource(R.string.checking_stops), color = C.muted, fontSize = 13.sp)
         }
     } else if (state.selectedDestination != null && state.displayedTrains.isEmpty() && !state.stopVerificationUnavailable) {
-        Text("Nessun treno, nemmeno con cambio, per ${state.selectedDestination.name}", color = C.orange, modifier = Modifier.padding(16.dp))
+        Text(stringResource(R.string.no_trains_to_destination, state.selectedDestination.name), color = C.orange, modifier = Modifier.padding(16.dp))
     } else {
         if (state.error != null) {
-            Text(state.error!!, color = C.orange, fontSize = 12.sp)
+            Text(state.error!!.text(), color = C.orange, fontSize = 12.sp)
         }
         if (state.selectedDestination != null && state.stopVerificationUnavailable) {
             Text(
-                "⚠️ Non riesco a verificare le fermate per questo orario (dati non ancora disponibili) — " +
-                    "ecco tutti i treni, controlla tu quali fermano a ${state.selectedDestination.name}",
+                stringResource(R.string.stop_verification_unavailable, state.selectedDestination.name),
                 color = C.orange, fontSize = 11.sp, modifier = Modifier.padding(bottom = 4.dp)
             )
         }
@@ -407,15 +416,15 @@ fun StationSearchTab(state: UiState, vm: TreniViewModel) {
 @Composable
 fun TrainSearchTab(state: UiState, vm: TreniViewModel) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        TabButton("Stazione", false, { vm.switchToStationMode() }, Modifier.weight(1f))
-        TabButton("Numero Treno", true, {}, Modifier.weight(1f))
+        TabButton(stringResource(R.string.tab_station), false, { vm.switchToStationMode() }, Modifier.weight(1f))
+        TabButton(stringResource(R.string.tab_train_number), true, {}, Modifier.weight(1f))
     }
     Spacer(modifier = Modifier.height(8.dp))
 
     OutlinedTextField(
         value = state.trainQuery,
         onValueChange = { vm.onTrainQueryChanged(it) },
-        label = { Text("Numero treno (es. 9584)") },
+        label = { Text(stringResource(R.string.train_number_hint)) },
         modifier = Modifier.fillMaxWidth(),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = C.accent, unfocusedBorderColor = C.border,
@@ -428,6 +437,10 @@ fun TrainSearchTab(state: UiState, vm: TreniViewModel) {
             if (state.trainSuggestions.size == 1) vm.selectTrain(state.trainSuggestions[0])
         })
     )
+
+    if (!state.isLoading && state.trainError != null) {
+        Text(state.trainError.text(), color = C.orange, modifier = Modifier.padding(16.dp))
+    }
 
     if (state.trainSuggestions.isNotEmpty()) {
         LazyColumn(modifier = Modifier.heightIn(max = 180.dp).fillMaxWidth()) {
@@ -446,7 +459,7 @@ fun TrainSearchTab(state: UiState, vm: TreniViewModel) {
     // Recent train searches — fastest path when in a hurry
     if (state.trainQuery.isEmpty() && state.recentTrains.isNotEmpty()) {
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Ricerche recenti", color = C.muted, fontSize = 12.sp)
+        Text(stringResource(R.string.recent_searches), color = C.muted, fontSize = 12.sp)
         Column(modifier = Modifier.fillMaxWidth()) {
             state.recentTrains.forEach { t ->
                 Row(
@@ -470,7 +483,7 @@ fun TrainSearchTab(state: UiState, vm: TreniViewModel) {
 @Composable
 fun TimePickerField(currentTime: Date?, onTimeSet: (Date?) -> Unit) {
     var showDialog by remember { mutableStateOf(false) }
-    val timeStr = currentTime?.let { SimpleDateFormat("HH:mm", Locale.ITALIAN).format(it) } ?: "Adesso"
+    val timeStr = currentTime?.let { SimpleDateFormat("HH:mm", Locale.ITALIAN).format(it) } ?: stringResource(R.string.now)
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         OutlinedButton(
@@ -483,7 +496,7 @@ fun TimePickerField(currentTime: Date?, onTimeSet: (Date?) -> Unit) {
         }
         if (currentTime != null) {
             IconButton(onClick = { onTimeSet(null) }, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Filled.Close, contentDescription = "Reimposta a adesso", tint = C.muted, modifier = Modifier.size(16.dp))
+                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cd_reset_to_now), tint = C.muted, modifier = Modifier.size(16.dp))
             }
         }
     }
@@ -498,10 +511,10 @@ fun TimePickerField(currentTime: Date?, onTimeSet: (Date?) -> Unit) {
         Dialog(onDismissRequest = { showDialog = false }) {
             Surface(shape = RoundedCornerShape(16.dp), color = C.card) {
                 Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Seleziona orario", color = C.text, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 12.dp))
+                    Text(stringResource(R.string.select_time), color = C.text, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 12.dp))
                     TimePicker(state = pickerState)
                     Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.End) {
-                        TextButton(onClick = { showDialog = false }) { Text("Annulla", color = C.muted) }
+                        TextButton(onClick = { showDialog = false }) { Text(stringResource(R.string.cancel), color = C.muted) }
                         TextButton(onClick = {
                             val cal = Calendar.getInstance(TimeZone.getTimeZone("Europe/Rome"))
                             cal.set(Calendar.HOUR_OF_DAY, pickerState.hour)
@@ -509,7 +522,7 @@ fun TimePickerField(currentTime: Date?, onTimeSet: (Date?) -> Unit) {
                             cal.set(Calendar.SECOND, 0)
                             onTimeSet(cal.time)
                             showDialog = false
-                        }) { Text("OK", color = C.accent) }
+                        }) { Text(stringResource(R.string.ok), color = C.accent) }
                     }
                 }
             }
@@ -557,7 +570,7 @@ fun TrainCard(
     val delay = train.ritardo
     val category = train.categoriaDescrizione.trim()
     val number = train.numeroTreno
-    val label = if (category.isNotEmpty()) "$category $number" else "Treno $number"
+    val label = if (category.isNotEmpty()) "$category $number" else stringResource(R.string.train_label_fallback, number)
     val dest = train.destinazione ?: train.origine ?: "—"
     val schedTime = train.compOrarioPartenza ?: train.compOrarioArrivo ?: "—"
     val realTime = train.compOrarioPartenzaZeroEffettivo ?: train.compOrarioArrivoZeroEffettivo
@@ -565,11 +578,11 @@ fun TrainCard(
     val notYetDue = !isCancelled && train.nonPartito
     val delayCol = if (notYetDue) C.muted else delayColor(delay)
     val delayText = when {
-        isCancelled -> "Cancellato"
+        isCancelled -> stringResource(R.string.status_cancelled)
         delay > 0 -> "+${delay}'"
         delay < 0 -> "${delay}'"
-        notYetDue -> "Non partito"
-        else -> "In orario"
+        notYetDue -> stringResource(R.string.status_not_departed)
+        else -> stringResource(R.string.status_on_time)
     }
 
     Card(
@@ -584,7 +597,7 @@ fun TrainCard(
                 Text(label, color = if (isCancelled) C.red else C.text, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 if (platform != null) {
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Bin $platform", color = C.accent, fontSize = 12.sp,
+                    Text(stringResource(R.string.platform_short, platform), color = C.accent, fontSize = 12.sp,
                         modifier = Modifier.background(C.accent.copy(alpha = 0.15f), RoundedCornerShape(4.dp)).padding(horizontal = 4.dp, vertical = 1.dp))
                 }
                 Operatori.nome(train.codiceCliente)?.let { operatorLabel ->
@@ -634,12 +647,12 @@ fun TrainCard(
                 }
                 if (isPartialCancel && !isCancelled) {
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("PARZ. CANCELLATO", color = C.orange, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.partially_cancelled_short), color = C.orange, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
                 if (train.inStazione) {
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        if (currentLocation != null) "🟢 Rilevato a $currentLocation" else "🟢 In stazione",
+                        if (currentLocation != null) stringResource(R.string.last_seen_at, currentLocation) else stringResource(R.string.in_station),
                         color = C.green, fontSize = 11.sp
                     )
                 }
@@ -654,53 +667,53 @@ fun TrainCard(
 fun HelpScreen(onBack: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         TextButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro", tint = C.text)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = C.text)
             Spacer(modifier = Modifier.width(4.dp))
-            Text("Indietro", color = C.text)
+            Text(stringResource(R.string.back), color = C.text)
         }
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
-            HelpTitle("🚆 Come funziona TreniRT")
-            HelpBody("È un'app per vedere in tempo reale gli orari dei treni italiani, usando gli stessi dati di ViaggiaTreno (Trenitalia). Niente account, niente pubblicità: apri, cerchi, guardi il treno.")
+            HelpTitle(R.string.help_title_how)
+            HelpBody(R.string.help_intro)
 
-            HelpTitle("Cercare per stazione")
-            HelpBody("Scrivi il nome della stazione e scegli dai suggerimenti. Puoi vedere le Partenze o gli Arrivi, e scegliere un orario diverso da \"adesso\" toccando il pulsante con l'orologio.")
-            HelpBody("Se aggiungi anche una destinazione (o provenienza), l'app ti mostra solo i treni che ci arrivano davvero — anche quelli che richiedono un cambio a metà strada, indicandoti dove scendere e che treno prendere dopo.")
+            HelpTitle(R.string.help_title_station)
+            HelpBody(R.string.help_station_1)
+            HelpBody(R.string.help_station_2)
 
-            HelpTitle("Cercare per numero treno")
-            HelpBody("Scrivi il numero e vedi tutte le fermate di quel treno, con orari previsti e reali, ritardo e dove si trova adesso. Funziona anche per un treno partito da ore.")
-            HelpBody("I treni Italo non sono tracciati da ViaggiaTreno: se il numero cercato non viene trovato lì, l'app prova automaticamente la fonte dati di Italo. È una fonte non ufficiale e meno completa (niente tabellone stazioni, solo ricerca per numero), quindi i dati mostrati per Italo possono essere meno dettagliati o occasionalmente non disponibili.")
+            HelpTitle(R.string.help_title_train)
+            HelpBody(R.string.help_train_1)
+            HelpBody(R.string.help_train_2)
 
-            HelpTitle("Ricerche recenti")
-            HelpBody("Le ultime combinazioni partenza→destinazione e gli ultimi numeri treno cercati restano salvati come scorciatoie, per non dover riscrivere tutto quando sei di corsa.")
+            HelpTitle(R.string.help_title_recent)
+            HelpBody(R.string.help_recent)
 
-            HelpTitle("Aggiornamento dei dati")
-            HelpBody("La lista si aggiorna da sola ogni minuto. C'è anche un pulsante di aggiornamento manuale (🔄) se vuoi essere sicuro di avere l'ultimissimo dato subito.")
+            HelpTitle(R.string.help_title_refresh)
+            HelpBody(R.string.help_refresh)
 
-            HelpTitle("⏳ Un limite da conoscere: la ricerca nel passato")
-            HelpBody("Se cerchi un treno per NUMERO, l'app può mostrartelo anche ore dopo che è partito: quel dato resta disponibile per tutta la giornata.")
-            HelpBody("Se invece cerchi per STAZIONE, la situazione è diversa: quella lista è una specie di \"tabellone dal vivo\", legata all'orologio reale del momento — non è un archivio consultabile. Se chiedi un orario di più di un paio d'ore fa, il tabellone risulta vuoto, perché quel dato semplicemente non esiste più da nessuna parte (non è colpa dell'app: Trenitalia stessa non lo mette a disposizione).")
-            HelpBody("C'è un'eccezione: se l'app ha già mostrato quei treni in questa sessione (ad esempio con \"adesso\"), li tiene a memoria e te li fa rivedere anche dopo che sono partiti. Ma se apri l'app e chiedi subito un orario passato senza che l'app li abbia mai visti dal vivo, ti conviene cercare per numero treno invece che per stazione.")
+            HelpTitle(R.string.help_title_past)
+            HelpBody(R.string.help_past_1)
+            HelpBody(R.string.help_past_2)
+            HelpBody(R.string.help_past_3)
 
-            HelpTitle("Tema chiaro / scuro")
-            HelpBody("Il pulsante ☀️/🌙 in alto cambia il tema: scuro per la sera, chiaro per usarla sotto il sole senza fatica. La scelta resta salvata.")
+            HelpTitle(R.string.help_title_theme)
+            HelpBody(R.string.help_theme)
 
-            HelpTitle("Dimensione del testo")
-            HelpBody("Il pulsante \"Aa\" in alto apre la scelta tra Normale, Grande e Grandissimo, per chi ha difficoltà a leggere i caratteri piccoli. Anche questa scelta resta salvata.")
+            HelpTitle(R.string.help_title_text_size)
+            HelpBody(R.string.help_text_size)
 
-            HelpTitle("ℹ️ Chi siamo")
-            HelpBody("TreniRT è un progetto indipendente e amatoriale, non affiliato, sponsorizzato o approvato da Trenitalia, RFI o Gruppo FS. Usa gli stessi dati pubblici dell'infrastruttura ViaggiaTreno consultabili dal sito e dall'app ufficiali, ma non è un prodotto ufficiale né ne garantisce l'accuratezza.")
+            HelpTitle(R.string.help_title_about)
+            HelpBody(R.string.help_about)
         }
     }
 }
 
 @Composable
-private fun HelpTitle(text: String) {
-    Text(text, color = C.accent, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp, bottom = 6.dp))
+private fun HelpTitle(@StringRes textRes: Int) {
+    Text(stringResource(textRes), color = C.accent, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp, bottom = 6.dp))
 }
 
 @Composable
-private fun HelpBody(text: String) {
-    Text(text, color = C.text, fontSize = 13.sp, lineHeight = 19.sp, modifier = Modifier.padding(bottom = 8.dp))
+private fun HelpBody(@StringRes textRes: Int) {
+    Text(stringResource(textRes), color = C.text, fontSize = 13.sp, lineHeight = 19.sp, modifier = Modifier.padding(bottom = 8.dp))
 }
 
 // ── Train Detail ─────────────────────────────────────────────────────
@@ -715,16 +728,16 @@ fun TrainDetailScreen(detail: TrainDetail, isLoading: Boolean, onBack: () -> Uni
     Column(modifier = Modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro", tint = C.text)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = C.text)
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Indietro", color = C.text)
+                Text(stringResource(R.string.back), color = C.text)
             }
             Spacer(modifier = Modifier.weight(1f))
             if (isLoading) {
                 CircularProgressIndicator(color = C.accent, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
             } else {
                 IconButton(onClick = onRefresh) {
-                    Icon(Icons.Filled.Refresh, contentDescription = "Aggiorna", tint = C.accent)
+                    Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.cd_refresh), tint = C.accent)
                 }
             }
         }
@@ -740,22 +753,26 @@ fun TrainDetailScreen(detail: TrainDetail, isLoading: Boolean, onBack: () -> Uni
             if (!isCancelled) {
                 Text(
                     when {
-                        notYetDue -> "🕐 Non ancora partito"
-                        delay == 0 -> "✅ In orario"
-                        delay > 0 -> "⚠️ +$delay min"
-                        else -> "$delay min"
+                        notYetDue -> stringResource(R.string.detail_not_departed)
+                        delay == 0 -> stringResource(R.string.detail_on_time)
+                        delay > 0 -> stringResource(R.string.detail_late, delay)
+                        else -> stringResource(R.string.detail_early, delay)
                     },
                     color = if (notYetDue) C.muted else delayColor(delay), fontSize = 20.sp, fontWeight = FontWeight.Bold
                 )
             }
-            if (isCancelled) Text("CANCELLATO", color = C.red, fontWeight = FontWeight.Bold)
-            else if (isPartialCancel) Text("PARZIALMENTE CANCELLATO", color = C.orange, fontWeight = FontWeight.Bold)
+            if (isCancelled) Text(stringResource(R.string.detail_cancelled), color = C.red, fontWeight = FontWeight.Bold)
+            else if (isPartialCancel) Text(stringResource(R.string.detail_partially_cancelled), color = C.orange, fontWeight = FontWeight.Bold)
 
             if (detail.stazioneUltimoRilevamento.isNotEmpty() && detail.stazioneUltimoRilevamento != "--") {
                 val lastTime = if (detail.oraUltimoRilevamento > 0) {
                     SimpleDateFormat("HH:mm", Locale.ITALIAN).format(Date(detail.oraUltimoRilevamento))
                 } else null
-                Text("📍 ${detail.stazioneUltimoRilevamento}${if (lastTime != null) " alle $lastTime" else ""}", color = C.muted, fontSize = 12.sp)
+                Text(
+                    if (lastTime != null) stringResource(R.string.last_detection_at_time, detail.stazioneUltimoRilevamento, lastTime)
+                    else "📍 ${detail.stazioneUltimoRilevamento}",
+                    color = C.muted, fontSize = 12.sp
+                )
             }
         }
 
@@ -848,13 +865,13 @@ fun StopRow(stop: TrainStop, currentDelay: Int, reached: StopReached, onStationC
             }
 
             if (isCancelled) {
-                Text("SOPPRESSA", color = C.red, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.stop_cancelled), color = C.red, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             } else when {
-                isOrigin -> TimeLine("Partenza", sdf, stop.partenza_teorica, stop.partenzaReale, depDelay, reached.departure)
-                isDest -> TimeLine("Arrivo", sdf, stop.arrivo_teorico, stop.arrivoReale, arrDelay, reached.arrival)
+                isOrigin -> TimeLine(stringResource(R.string.departure), sdf, stop.partenza_teorica, stop.partenzaReale, depDelay, reached.departure)
+                isDest -> TimeLine(stringResource(R.string.arrival), sdf, stop.arrivo_teorico, stop.arrivoReale, arrDelay, reached.arrival)
                 else -> {
-                    TimeLine("Arrivo", sdf, stop.arrivo_teorico, stop.arrivoReale, arrDelay, reached.arrival)
-                    TimeLine("Partenza", sdf, stop.partenza_teorica, stop.partenzaReale, depDelay, reached.departure)
+                    TimeLine(stringResource(R.string.arrival), sdf, stop.arrivo_teorico, stop.arrivoReale, arrDelay, reached.arrival)
+                    TimeLine(stringResource(R.string.departure), sdf, stop.partenza_teorica, stop.partenzaReale, depDelay, reached.departure)
                 }
             }
         }

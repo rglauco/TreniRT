@@ -1,3 +1,9 @@
+AntiFeatures:
+  NonFreeNet:
+    en-US: Relies on Trenitalia's ViaggiaTreno service and, for Italo trains, on an
+      unofficial Italo endpoint.
+    it: Si basa sul servizio ViaggiaTreno di Trenitalia e, per i treni Italo, su un
+      endpoint non ufficiale di Italo.
 Categories:
   - Public Transport
 License: AGPL-3.0-or-later

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lingue offerte nella scelta per-app di Android 13+ (Impostazioni › App › Lingua):
+     da aggiornare insieme alle cartelle values-xx. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="it" />
+</locale-config>

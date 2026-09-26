@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Traduzione italiana delle stringhe di values/strings.xml (inglese, lingua predefinita):
+     ogni chiave aggiunta lì va aggiunta anche qui. -->
+<resources>
+    <!-- Schede di ricerca -->
+    <string name="tab_station">Stazione</string>
+    <string name="tab_train_number">Numero Treno</string>
+    <string name="station_search_hint">Cerca stazione…</string>
+    <string name="train_number_hint">Numero treno (es. 9584)</string>
+    <string name="recent_searches">Ricerche recenti</string>
+    <string name="destination_optional">Destinazione (opzionale)</string>
+    <string name="origin_optional">Provenienza (opzionale)</string>
+    <string name="swap_stations">⇅ Inverti partenza/destinazione</string>
+    <string name="departures">Partenze</string>
+    <string name="arrivals">Arrivi</string>
+    <string name="checking_stops">Verifica fermate…</string>
+    <string name="no_trains_to_destination">Nessun treno, nemmeno con cambio, per %1$s</string>
+    <string name="stop_verification_unavailable">⚠️ Non riesco a verificare le fermate per questo orario (dati non ancora disponibili) — ecco tutti i treni, controlla tu quali fermano a %1$s</string>
+
+    <!-- Descrizioni per l'accessibilità -->
+    <string name="cd_clear">Cancella</string>
+    <string name="cd_remove_filter">Rimuovi filtro</string>
+    <string name="cd_refresh">Aggiorna</string>
+    <string name="cd_reset_to_now">Reimposta a adesso</string>
+
+    <!-- Selettore orario -->
+    <string name="now">Adesso</string>
+    <string name="select_time">Seleziona orario</string>
+    <string name="cancel">Annulla</string>
+    <string name="ok">OK</string>
+
+    <!-- Card treno -->
+    <string name="train_label_fallback">Treno %1$d</string>
+    <string name="status_cancelled">Cancellato</string>
+    <string name="status_not_departed">Non partito</string>
+    <string name="status_on_time">In orario</string>
+    <string name="platform_short">Bin %1$s</string>
+    <string name="partially_cancelled_short">PARZ. CANCELLATO</string>
+    <string name="last_seen_at">🟢 Rilevato a %1$s</string>
+    <string name="in_station">🟢 In stazione</string>
+
+    <!-- Dettaglio treno -->
+    <string name="back">Indietro</string>
+    <string name="detail_not_departed">🕐 Non ancora partito</string>
+    <string name="detail_on_time">✅ In orario</string>
+    <string name="detail_late">⚠️ +%1$d min</string>
+    <string name="detail_early">%1$d min</string>
+    <string name="detail_cancelled">CANCELLATO</string>
+    <string name="detail_partially_cancelled">PARZIALMENTE CANCELLATO</string>
+    <string name="last_detection_at_time">📍 %1$s alle %2$s</string>
+    <string name="stop_cancelled">SOPPRESSA</string>
+    <string name="departure">Partenza</string>
+    <string name="arrival">Arrivo</string>
+
+    <!-- Dimensione testo -->
+    <string name="font_size_normal">Normale</string>
+    <string name="font_size_large">Grande</string>
+    <string name="font_size_extra_large">Grandissimo</string>
+
+    <!-- Messaggi dal ViewModel -->
+    <string name="error_no_trains">Nessun treno trovato</string>
+    <string name="info_past_time_tomorrow">Orario nel passato — orari di domani</string>
+    <string name="error_loading">Errore di caricamento</string>
+    <string name="error_train_not_found">Treno %1$s non trovato</string>
+    <string name="error_train_not_found_today">Treno %1$s non trovato per oggi</string>
+    <string name="error_no_live_data">Nessun dato in tempo reale ancora disponibile per il treno %1$s</string>
+
+    <!-- Schermata di aiuto -->
+    <string name="help_title_how">🚆 Come funziona TreniRT</string>
+    <string name="help_intro">È un\'app per vedere in tempo reale gli orari dei treni italiani, usando gli stessi dati di ViaggiaTreno (Trenitalia). Niente account, niente pubblicità: apri, cerchi, guardi il treno.</string>
+    <string name="help_title_station">Cercare per stazione</string>
+    <string name="help_station_1">Scrivi il nome della stazione e scegli dai suggerimenti. Puoi vedere le Partenze o gli Arrivi, e scegliere un orario diverso da \"adesso\" toccando il pulsante con l\'orologio.</string>
+    <string name="help_station_2">Se aggiungi anche una destinazione (o provenienza), l\'app ti mostra solo i treni che ci arrivano davvero — anche quelli che richiedono un cambio a metà strada, indicandoti dove scendere e che treno prendere dopo.</string>
+    <string name="help_title_train">Cercare per numero treno</string>
+    <string name="help_train_1">Scrivi il numero e vedi tutte le fermate di quel treno, con orari previsti e reali, ritardo e dove si trova adesso. Funziona anche per un treno partito da ore.</string>
+    <string name="help_train_2">I treni Italo non sono tracciati da ViaggiaTreno: se il numero cercato non viene trovato lì, l\'app prova automaticamente la fonte dati di Italo. È una fonte non ufficiale e meno completa (niente tabellone stazioni, solo ricerca per numero), quindi i dati mostrati per Italo possono essere meno dettagliati o occasionalmente non disponibili.</string>
+    <string name="help_title_recent">Ricerche recenti</string>
+    <string name="help_recent">Le ultime combinazioni partenza→destinazione e gli ultimi numeri treno cercati restano salvati come scorciatoie, per non dover riscrivere tutto quando sei di corsa.</string>
+    <string name="help_title_refresh">Aggiornamento dei dati</string>
+    <string name="help_refresh">La lista si aggiorna da sola ogni minuto. C\'è anche un pulsante di aggiornamento manuale (🔄) se vuoi essere sicuro di avere l\'ultimissimo dato subito.</string>
+    <string name="help_title_past">⏳ Un limite da conoscere: la ricerca nel passato</string>
+    <string name="help_past_1">Se cerchi un treno per NUMERO, l\'app può mostrartelo anche ore dopo che è partito: quel dato resta disponibile per tutta la giornata.</string>
+    <string name="help_past_2">Se invece cerchi per STAZIONE, la situazione è diversa: quella lista è una specie di \"tabellone dal vivo\", legata all\'orologio reale del momento — non è un archivio consultabile. Se chiedi un orario di più di un paio d\'ore fa, il tabellone risulta vuoto, perché quel dato semplicemente non esiste più da nessuna parte (non è colpa dell\'app: Trenitalia stessa non lo mette a disposizione).</string>
+    <string name="help_past_3">C\'è un\'eccezione: se l\'app ha già mostrato quei treni in questa sessione (ad esempio con \"adesso\"), li tiene a memoria e te li fa rivedere anche dopo che sono partiti. Ma se apri l\'app e chiedi subito un orario passato senza che l\'app li abbia mai visti dal vivo, ti conviene cercare per numero treno invece che per stazione.</string>
+    <string name="help_title_theme">Tema chiaro / scuro</string>
+    <string name="help_theme">Il pulsante ☀️/🌙 in alto cambia il tema: scuro per la sera, chiaro per usarla sotto il sole senza fatica. La scelta resta salvata.</string>
+    <string name="help_title_text_size">Dimensione del testo</string>
+    <string name="help_text_size">Il pulsante \"Aa\" in alto apre la scelta tra Normale, Grande e Grandissimo, per chi ha difficoltà a leggere i caratteri piccoli. Anche questa scelta resta salvata.</string>
+    <string name="help_title_about">ℹ️ Chi siamo</string>
+    <string name="help_about">TreniRT è un progetto indipendente e amatoriale, non affiliato, sponsorizzato o approvato da Trenitalia, RFI, Gruppo FS o Italo (NTV). Usa gli stessi dati pubblici dell\'infrastruttura ViaggiaTreno consultabili dal sito e dall\'app ufficiali, ma non è un prodotto ufficiale né ne garantisce l\'accuratezza.</string>
+</resources>

@@ -5,9 +5,19 @@ Funzionalità principali:
 * Partenze e arrivi per stazione, a qualsiasi orario
 * Ricerca per numero treno, con tutte le fermate e il ritardo in tempo reale
 * Filtro per stazione di destinazione, con ricerca automatica di coincidenze/cambio treno quando non c'è un treno diretto
+* Treni Italo cercabili per numero (vedi "Fonti dati" sotto)
 * Cronologia delle ultime ricerche per stazione e per numero treno
 * Tema chiaro e scuro
 * Aggiornamento automatico (scroll infinito) e manuale dei dati
 * Nessuna pubblicità, nessun tracker, nessuna raccolta di dati personali
 
-TreniRT è un progetto indipendente e amatoriale, non affiliato, sponsorizzato o approvato da Trenitalia, RFI o Gruppo FS.
+Fonti dati e connessioni di rete:
+
+L'app non si connette a nulla all'avvio; le richieste partono solo quando fai una ricerca.
+
+* ViaggiaTreno (www.viaggiatreno.it, gestito da Trenitalia/RFI) — la fonte principale per stazioni, partenze, arrivi e dettaglio treno. Il servizio funziona solo in HTTP semplice (reindirizza le richieste HTTPS verso HTTP), quindi queste richieste non sono cifrate.
+* Italo (italoinviaggio.italotreno.com, HTTPS) — i treni Italo non sono tracciati da ViaggiaTreno: se un numero treno non viene trovato lì, l'app interroga automaticamente l'endpoint non ufficiale usato dalla pagina "Italo in Viaggio" del sito Italo. Viene usato solo per la ricerca per numero treno.
+
+Entrambi sono servizi di rete proprietari, fuori dal controllo dell'app: possono cambiare o smettere di funzionare in qualsiasi momento.
+
+TreniRT è un progetto indipendente e amatoriale, non affiliato, sponsorizzato o approvato da Trenitalia, RFI, Gruppo FS o Italo (NTV).

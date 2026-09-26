@@ -1,13 +1,25 @@
 TreniRT shows schedules, departures, arrivals and delays for Italian trains in real time, using the same public data from Trenitalia's ViaggiaTreno infrastructure — the same data available on the official website and app.
 
+The app is available in English and Italian, following the device language.
+
 Main features:
 
 * Departures and arrivals by station, at any time
 * Search by train number, with all stops and the real-time delay
 * Filter by destination station, with automatic search for connections/train changes when there is no direct train
+* Italo trains searchable by number (see "Data sources" below)
 * History of recent searches by station and by train number
 * Light and dark theme
 * Automatic (infinite scroll) and manual data refresh
 * No ads, no trackers, no personal data collection
 
-TreniRT is an independent, hobby project, not affiliated with, sponsored by, or endorsed by Trenitalia, RFI, or Gruppo FS.
+Data sources and network connections:
+
+The app makes no connection on start; requests are sent only when you search.
+
+* ViaggiaTreno (www.viaggiatreno.it, operated by Trenitalia/RFI) — the main source for stations, departures, arrivals and train details. This service only works over plain HTTP (it redirects HTTPS requests to HTTP), so these requests are not encrypted.
+* Italo (italoinviaggio.italotreno.com, HTTPS) — Italo trains are not tracked by ViaggiaTreno, so when a train number is not found there, the app automatically queries the unofficial endpoint behind Italo's "Italo in Viaggio" web page. It is only used for train number searches.
+
+Both are proprietary network services outside the app's control: they may change or stop working at any time.
+
+TreniRT is an independent, hobby project, not affiliated with, sponsored by, or endorsed by Trenitalia, RFI, Gruppo FS or Italo (NTV).

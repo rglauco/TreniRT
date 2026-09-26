@@ -1,4 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Default (English) strings, used for every device language without its own values-xx
+     folder. The Italian translation lives in values-it/strings.xml: keep the two in sync. -->
 <resources>
-    <string name="app_name">TreniRT</string>
+    <string name="app_name" translatable="false">TreniRT</string>
+
+    <!-- Search tabs -->
+    <string name="tab_station">Station</string>
+    <string name="tab_train_number">Train number</string>
+    <string name="station_search_hint">Search station…</string>
+    <string name="train_number_hint">Train number (e.g. 9584)</string>
+    <string name="recent_searches">Recent searches</string>
+    <string name="destination_optional">Destination (optional)</string>
+    <string name="origin_optional">Coming from (optional)</string>
+    <string name="swap_stations">⇅ Swap origin/destination</string>
+    <string name="departures">Departures</string>
+    <string name="arrivals">Arrivals</string>
+    <string name="checking_stops">Checking stops…</string>
+    <string name="no_trains_to_destination">No trains to %1$s, not even with a change</string>
+    <string name="stop_verification_unavailable">⚠️ Can\'t verify stops for this time (data not available yet) — here are all the trains, check yourself which ones stop at %1$s</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_clear">Clear</string>
+    <string name="cd_remove_filter">Remove filter</string>
+    <string name="cd_refresh">Refresh</string>
+    <string name="cd_reset_to_now">Reset to now</string>
+
+    <!-- Time picker -->
+    <string name="now">Now</string>
+    <string name="select_time">Select time</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+
+    <!-- Train card -->
+    <string name="train_label_fallback">Train %1$d</string>
+    <string name="status_cancelled">Cancelled</string>
+    <string name="status_not_departed">Not departed</string>
+    <string name="status_on_time">On time</string>
+    <string name="platform_short">Plat. %1$s</string>
+    <string name="partially_cancelled_short">PART. CANCELLED</string>
+    <string name="last_seen_at">🟢 Last seen at %1$s</string>
+    <string name="in_station">🟢 At station</string>
+
+    <!-- Train detail -->
+    <string name="back">Back</string>
+    <string name="detail_not_departed">🕐 Not departed yet</string>
+    <string name="detail_on_time">✅ On time</string>
+    <string name="detail_late">⚠️ +%1$d min</string>
+    <string name="detail_early">%1$d min</string>
+    <string name="detail_cancelled">CANCELLED</string>
+    <string name="detail_partially_cancelled">PARTIALLY CANCELLED</string>
+    <string name="last_detection_at_time">📍 %1$s at %2$s</string>
+    <string name="stop_cancelled">CANCELLED</string>
+    <string name="departure">Departure</string>
+    <string name="arrival">Arrival</string>
+
+    <!-- Text size -->
+    <string name="font_size_normal">Normal</string>
+    <string name="font_size_large">Large</string>
+    <string name="font_size_extra_large">Extra large</string>
+
+    <!-- Messages from the ViewModel -->
+    <string name="error_no_trains">No trains found</string>
+    <string name="info_past_time_tomorrow">Time in the past — showing tomorrow\'s schedule</string>
+    <string name="error_loading">Loading error</string>
+    <string name="error_train_not_found">Train %1$s not found</string>
+    <string name="error_train_not_found_today">Train %1$s not found for today</string>
+    <string name="error_no_live_data">No real-time data available yet for train %1$s</string>
+
+    <!-- Help screen -->
+    <string name="help_title_how">🚆 How TreniRT works</string>
+    <string name="help_intro">An app to check Italian train times in real time, using the same data as ViaggiaTreno (Trenitalia). No account, no ads: open it, search, check your train.</string>
+    <string name="help_title_station">Searching by station</string>
+    <string name="help_station_1">Type the station name and pick it from the suggestions. You can see Departures or Arrivals, and choose a time other than \"now\" by tapping the clock button.</string>
+    <string name="help_station_2">If you also add a destination (or origin), the app only shows the trains that actually get there — including those that need a change along the way, telling you where to get off and which train to take next.</string>
+    <string name="help_title_train">Searching by train number</string>
+    <string name="help_train_1">Type the number to see all the stops of that train, with scheduled and actual times, delay and where it is right now. It also works for a train that left hours ago.</string>
+    <string name="help_train_2">Italo trains are not tracked by ViaggiaTreno: if the number isn\'t found there, the app automatically tries Italo\'s data source. It is an unofficial and less complete source (no station boards, train number search only), so the data shown for Italo may be less detailed or occasionally unavailable.</string>
+    <string name="help_title_recent">Recent searches</string>
+    <string name="help_recent">The latest origin→destination pairs and train numbers you searched are saved as shortcuts, so you don\'t have to type everything again when you\'re in a hurry.</string>
+    <string name="help_title_refresh">Data refresh</string>
+    <string name="help_refresh">The list refreshes by itself every minute. There\'s also a manual refresh button (🔄) if you want to be sure you have the very latest data right away.</string>
+    <string name="help_title_past">⏳ A limitation to know about: searching the past</string>
+    <string name="help_past_1">If you search for a train by NUMBER, the app can show it even hours after it left: that data stays available for the whole day.</string>
+    <string name="help_past_2">If you search by STATION, things are different: that list is a sort of \"live departure board\", tied to the actual current time — it isn\'t an archive you can browse. If you ask for a time more than a couple of hours ago, the board comes back empty, because that data simply doesn\'t exist anywhere anymore (it\'s not the app\'s fault: Trenitalia itself doesn\'t provide it).</string>
+    <string name="help_past_3">There\'s one exception: if the app has already shown those trains during this session (for example with \"now\"), it keeps them in memory and lets you see them again even after they\'ve left. But if you open the app and immediately ask for a past time without the app ever having seen those trains live, you\'re better off searching by train number instead of by station.</string>
+    <string name="help_title_theme">Light / dark theme</string>
+    <string name="help_theme">The ☀️/🌙 button at the top switches the theme: dark for the evening, light for comfortable use in sunlight. Your choice is saved.</string>
+    <string name="help_title_text_size">Text size</string>
+    <string name="help_text_size">The \"Aa\" button at the top lets you choose between Normal, Large and Extra large, for anyone who has trouble reading small text. This choice is saved too.</string>
+    <string name="help_title_about">ℹ️ About</string>
+    <string name="help_about">TreniRT is an independent, hobby project, not affiliated with, sponsored by, or endorsed by Trenitalia, RFI, Gruppo FS or Italo (NTV). It uses the same public data from the ViaggiaTreno infrastructure available on the official website and app, but it is not an official product and does not guarantee its accuracy.</string>
 </resources>

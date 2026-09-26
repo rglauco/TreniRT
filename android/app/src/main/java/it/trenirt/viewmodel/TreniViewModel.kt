@@ -4,10 +4,12 @@ package it.trenirt.viewmodel
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import it.trenirt.R
 import it.trenirt.api.ItaloApi
 import it.trenirt.api.ItaloApi.toTrainDetail
 import it.trenirt.api.ViaggiaTrenoApi
@@ -26,11 +28,18 @@ import java.util.*
 
 enum class StationListFilter { DEPARTURES, ARRIVALS }
 
-enum class FontSizeOption(val label: String, val scale: Float) {
-    NORMALE("Normale", 1.0f),
-    GRANDE("Grande", 1.2f),
-    GRANDISSIMO("Grandissimo", 1.45f)
+// I nomi delle costanti restano in italiano: sono salvati così nelle preferenze (KEY_FONT_SIZE),
+// rinominarli azzererebbe la scelta di chi aggiorna l'app.
+enum class FontSizeOption(@StringRes val labelRes: Int, val scale: Float) {
+    NORMALE(R.string.font_size_normal, 1.0f),
+    GRANDE(R.string.font_size_large, 1.2f),
+    GRANDISSIMO(R.string.font_size_extra_large, 1.45f)
 }
+
+/** A user-facing message as a string resource plus its format args. Resolved by the UI rather
+ *  than here, so it follows the device language — even across a language change while the
+ *  ViewModel (which outlives configuration changes) is still holding it. */
+data class UiMessage(@StringRes val resId: Int, val args: List<Any> = emptyList())
 
 data class RecentTrip(
     val origin: ViaggiaTrenoApi.StationSuggestion,
@@ -71,7 +80,11 @@ data class UiState(
     val showDetail: Boolean = false,
     // Which tab to show when going back from train detail
     val mode: String = "station", // "station" or "train"
-    val error: String? = null,
+    val error: UiMessage? = null,
+    // Errors of the train-number tab, kept apart from [error] (station board) since both tabs
+    // keep their own state while switching between them — a shared field would show one tab's
+    // message in the other.
+    val trainError: UiMessage? = null,
     // Optional destination filter (other end of the journey). Matching against every
     // intermediate stop (not just the train's terminus) requires a per-train detail fetch,
     // so the verified result lands separately from the initial station-board load.
@@ -644,14 +657,14 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                         stationTrains = mergedTomorrow,
                         isLoading = false,
                         effectiveBoardDate = tomorrow,
-                        error = if (mergedTomorrow.isEmpty()) "Nessun treno trovato" else "Orario nel passato — orari di domani"
+                        error = UiMessage(if (mergedTomorrow.isEmpty()) R.string.error_no_trains else R.string.info_past_time_tomorrow)
                     )
                 } else {
                     _state.value = _state.value.copy(
                         stationTrains = merged,
                         isLoading = false,
                         effectiveBoardDate = boardDate,
-                        error = if (merged.isEmpty()) "Nessun treno trovato" else null
+                        error = if (merged.isEmpty()) UiMessage(R.string.error_no_trains) else null
                     )
                 }
                 if (_state.value.selectedDestination != null) refreshStopCheck()
@@ -661,7 +674,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading station trains", e)
-                _state.value = _state.value.copy(isLoading = false, error = "Errore di caricamento")
+                _state.value = _state.value.copy(isLoading = false, error = UiMessage(R.string.error_loading))
             }
         }
     }
@@ -821,7 +834,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
 
     // --- Train ---
     fun onTrainQueryChanged(query: String) {
-        _state.value = _state.value.copy(trainQuery = query, trainSuggestions = emptyList())
+        _state.value = _state.value.copy(trainQuery = query, trainSuggestions = emptyList(), trainError = null)
         trainSearchJob?.cancel()
         if (query.isBlank()) return
         trainSearchJob = viewModelScope.launch(Dispatchers.IO) {
@@ -864,7 +877,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             null
         }
         if (italoTrain == null) {
-            _state.value = _state.value.copy(isLoading = false, error = "Treno $number non trovato")
+            _state.value = _state.value.copy(isLoading = false, trainError = UiMessage(R.string.error_train_not_found, listOf(number)))
             return
         }
         _state.value = _state.value.copy(
@@ -878,6 +891,13 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun showTrainDetail(originCode: String, number: Int, referenceDay: Long, recordAs: ViaggiaTrenoApi.TrainSuggestion) {
         try {
             val detail = ViaggiaTrenoApi.getTrainDetail(originCode, number, referenceDay)
+            // 204 da andamentoTreno: il numero esiste (l'autocomplete l'ha trovato) ma per questa
+            // corsa non ci sono ancora dati. Senza questo controllo showDetail = true con un
+            // dettaglio null non mostrava nulla, lasciando la schermata ferma senza spiegazioni.
+            if (detail == null) {
+                _state.value = _state.value.copy(isLoading = false, trainError = UiMessage(R.string.error_no_live_data, listOf(number.toString())))
+                return
+            }
             _state.value = _state.value.copy(
                 trainDetail = detail, isLoading = false, showDetail = true,
                 currentTrainOriginCode = originCode, currentTrainNumber = number,
@@ -886,18 +906,22 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             recordRecentTrain(recordAs)
         } catch (e: Exception) {
             Log.e(TAG, "Error loading train detail", e)
-            _state.value = _state.value.copy(isLoading = false, error = "Errore di caricamento")
+            _state.value = _state.value.copy(isLoading = false, trainError = UiMessage(R.string.error_loading))
         }
     }
 
     fun selectTrain(suggestion: ViaggiaTrenoApi.TrainSuggestion) {
-        _state.value = _state.value.copy(trainSuggestions = emptyList(), isLoading = true, showDetail = false, mode = "train")
+        _state.value = _state.value.copy(trainSuggestions = emptyList(), isLoading = true, showDetail = false, mode = "train", trainError = null)
         viewModelScope.launch(Dispatchers.IO) {
             if (suggestion.originCode == ITALO_ORIGIN_CODE) {
                 showItaloTrainDetail(suggestion.number, suggestion)
                 return@launch
             }
-            val num = suggestion.number.toIntOrNull() ?: return@launch
+            val num = suggestion.number.toIntOrNull()
+            if (num == null) {
+                _state.value = _state.value.copy(isLoading = false, trainError = UiMessage(R.string.error_train_not_found, listOf(suggestion.number)))
+                return@launch
+            }
             showTrainDetail(suggestion.originCode, num, suggestion.resolvedReferenceDay(), suggestion)
         }
     }
@@ -905,7 +929,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
     /** Recent-train entries can be days old: the saved day is no longer meaningful, so re-run a
      *  live search for the number instead of trusting it — same as if the user just typed it. */
     fun selectRecentTrain(suggestion: ViaggiaTrenoApi.TrainSuggestion) {
-        _state.value = _state.value.copy(isLoading = true, showDetail = false, mode = "train")
+        _state.value = _state.value.copy(isLoading = true, showDetail = false, mode = "train", trainError = null)
         viewModelScope.launch(Dispatchers.IO) {
             // Italo non ha un autocomplete separato dal dettaglio: rifare la ricerca È il
             // dettaglio, quindi si passa direttamente da lì invece che da ViaggiaTreno.
@@ -922,7 +946,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
             }
             val num = fresh?.number?.toIntOrNull()
             if (fresh == null || num == null) {
-                _state.value = _state.value.copy(isLoading = false, error = "Treno ${suggestion.number} non trovato per oggi")
+                _state.value = _state.value.copy(isLoading = false, trainError = UiMessage(R.string.error_train_not_found_today, listOf(suggestion.number)))
                 return@launch
             }
             showTrainDetail(fresh.originCode, num, fresh.resolvedReferenceDay(), fresh)
@@ -942,7 +966,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading train detail", e)
-                _state.value = _state.value.copy(isLoading = false, error = "Errore di caricamento")
+                _state.value = _state.value.copy(isLoading = false, error = UiMessage(R.string.error_loading))
             }
         }
     }
@@ -964,7 +988,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                 _state.value = if (italoTrain != null) {
                     _state.value.copy(trainDetail = italoTrain.toTrainDetail(), isLoading = false)
                 } else {
-                    _state.value.copy(isLoading = false, error = "Errore di caricamento")
+                    _state.value.copy(isLoading = false, error = UiMessage(R.string.error_loading))
                 }
                 return@launch
             }
@@ -973,7 +997,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                 _state.value = _state.value.copy(trainDetail = detail, isLoading = false)
             } catch (e: Exception) {
                 Log.e(TAG, "Error refreshing train detail", e)
-                _state.value = _state.value.copy(isLoading = false, error = "Errore di caricamento")
+                _state.value = _state.value.copy(isLoading = false, error = UiMessage(R.string.error_loading))
             }
         }
     }
@@ -997,7 +1021,7 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun switchToTrainMode() {
-        _state.value = _state.value.copy(mode = "train", trainQuery = "", trainSuggestions = emptyList(), showDetail = false, stationSuggestions = emptyList())
+        _state.value = _state.value.copy(mode = "train", trainQuery = "", trainSuggestions = emptyList(), trainError = null, showDetail = false, stationSuggestions = emptyList())
     }
 
     fun switchToStationMode() {
