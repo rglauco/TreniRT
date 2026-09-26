@@ -17,9 +17,9 @@ Repo: https://github.com/rglauco/TreniRT.git
 Binaries: https://github.com/rglauco/TreniRT/releases/download/%v/TreniRT-%v.apk
 
 Builds:
-  - versionName: 1.7.0
-    versionCode: 31
-    commit: 75789498e96bda0771302b932fdba7e2d137764a
+  - versionName: 1.7.1
+    versionCode: 32
+    commit: fdf4cbc1d7a2238c91edb2e32109dff2d2795fe3
     subdir: android/app
     gradle:
       - yes
@@ -28,5 +28,5 @@ AllowedAPKSigningKeys: 6dc3224c91bf51b34b9b5c9c738a1aec9ba005cb58516d0fcb91b852d
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.7.0
-CurrentVersionCode: 31
+CurrentVersion: 1.7.1
+CurrentVersionCode: 32
