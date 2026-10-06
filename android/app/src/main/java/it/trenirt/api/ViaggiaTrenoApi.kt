@@ -17,6 +17,9 @@ import java.util.concurrent.TimeUnit
 object ViaggiaTrenoApi {
     private const val TAG = "TreniRT"
     private const val BASE = "http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno"
+    // ViaggiaTreno sits behind Akamai, which rejects OkHttp's default User-Agent with 403
+    private const val USER_AGENT =
+        "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36"
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
@@ -30,9 +33,13 @@ object ViaggiaTrenoApi {
     /** Throws on network failure so callers can tell "request failed" apart from "no data". */
     private fun get(path: String): String? {
         val url = "$BASE/$path"
-        val req = Request.Builder().url(url).build()
-        val resp = client.newCall(req).execute()
-        return if (resp.code == 204) null else resp.body?.string()
+        val req = Request.Builder().url(url).header("User-Agent", USER_AGENT).build()
+        client.newCall(req).execute().use { resp ->
+            if (resp.code == 204) return null
+            // Akamai answers 403 "Access Denied" HTML to unknown clients: treat it as a failure, not as data
+            if (!resp.isSuccessful) throw java.io.IOException("HTTP ${resp.code} for $url")
+            return resp.body?.string()
+        }
     }
 
     /** Same as [get] but swallows network errors — for autocomplete calls where a transient failure should just yield no suggestions. */

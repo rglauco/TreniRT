@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-10-06 — Corretto l'errore di caricamento su ViaggiaTreno
+
+### Corretto
+- **"Errore di caricamento" per qualsiasi ricerca**: ViaggiaTreno è protetto da Akamai, che ora rifiuta con un 403 "Access Denied" le richieste con l'User-Agent predefinito di OkHttp. L'app riceveva una pagina d'errore al posto dei dati. Ora le richieste usano un User-Agent da browser mobile, e una risposta non riuscita viene trattata come errore invece che come dati.
+
 ## 2026-09-26 — App in inglese, traffico HTTP limitato a ViaggiaTreno
 
 ### Aggiunto
