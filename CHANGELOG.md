@@ -243,3 +243,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.6.4 → v1.6.5: rimosso il blocco "Dependency metadata" dall'APK, che rompeva la verifica di build riproducibile su F-Droid.
 - v1.6.5 → v1.7.0: operatore ferroviario (Trenord, TILO, Italo) mostrato per ogni treno, ricerca per numero estesa a Italo tramite una fonte dati non ufficiale.
 - v1.7.0 → v1.7.1: interfaccia in inglese (italiano se il telefono è in italiano), traffico HTTP in chiaro consentito solo verso ViaggiaTreno, descrizione con fonti dati e connessioni di rete, errori della ricerca per numero treno finalmente visibili.
+- v1.7.1 → v1.7.2: fix "errore di caricamento" su ViaggiaTreno (User-Agent da browser per aggirare il blocco Akamai).
