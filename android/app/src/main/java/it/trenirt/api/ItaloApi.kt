@@ -2,8 +2,10 @@
 package it.trenirt.api
 
 import android.util.Log
+import androidx.annotation.Keep
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.Strictness
 import com.google.gson.annotations.SerializedName
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -25,8 +27,9 @@ object ItaloApi {
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
-    private val gson: Gson = GsonBuilder().setLenient().create()
+    private val gson: Gson = GsonBuilder().setStrictness(Strictness.LENIENT).create()
 
+    @Keep
     data class Stop(
         val LocationCode: String = "",
         val LocationDescription: String = "",
@@ -37,11 +40,13 @@ object ItaloApi {
         val ActualArrivalPlatform: String? = null
     )
 
+    @Keep
     data class Disruption(
         val DelayAmount: Int = 0,
         val RunningState: Int = 0
     )
 
+    @Keep
     data class TrainSchedule(
         val TrainNumber: String = "",
         val DepartureDate: String? = null,
@@ -54,6 +59,7 @@ object ItaloApi {
         val StazioniNonFerme: List<Stop> = emptyList()
     )
 
+    @Keep
     data class SearchResponse(
         val IsEmpty: Boolean = true,
         val TrainSchedule: TrainSchedule? = null

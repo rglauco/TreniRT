@@ -2,6 +2,12 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-11-05 — APK più leggera con R8
+
+### Modificato
+- **APK ridotta da 6,5 a 1,7 MB** (richiesto nella review di inclusione su F-Droid): la build di release ora passa da R8, che elimina il codice inutilizzato delle librerie (Compose, OkHttp, Gson) e ottimizza il resto, a vantaggio anche della fluidità dell'interfaccia. I nomi delle classi non vengono offuscati, così gli errori segnalati dagli utenti restano leggibili. Le classi lette e scritte da Gson (risposte di ViaggiaTreno e Italo, ricerche recenti) sono marcate `@Keep`, altrimenti R8 ne eliminerebbe i campi e il parsing restituirebbe oggetti vuoti senza errori; le ricerche recenti salvate dalle versioni precedenti restano valide.
+- **Gson aggiornato da 2.10.1 a 2.13.2**, che include già le proprie regole per R8.
+
 ## 2026-10-06 — Corretto l'errore di caricamento su ViaggiaTreno
 
 ### Corretto

@@ -4,6 +4,7 @@ package it.trenirt.viewmodel
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import androidx.annotation.Keep
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -41,6 +42,7 @@ enum class FontSizeOption(@StringRes val labelRes: Int, val scale: Float) {
  *  ViewModel (which outlives configuration changes) is still holding it. */
 data class UiMessage(@StringRes val resId: Int, val args: List<Any> = emptyList())
 
+@Keep
 data class RecentTrip(
     val origin: ViaggiaTrenoApi.StationSuggestion,
     val destination: ViaggiaTrenoApi.StationSuggestion

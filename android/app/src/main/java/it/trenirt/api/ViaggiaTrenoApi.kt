@@ -2,8 +2,10 @@
 package it.trenirt.api
 
 import android.util.Log
+import androidx.annotation.Keep
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.Strictness
 import com.google.gson.reflect.TypeToken
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -26,7 +28,7 @@ object ViaggiaTrenoApi {
         .build()
     // Lenient Gson that won't crash on unexpected types
     private val gson: Gson = GsonBuilder()
-        .setLenient()
+        .setStrictness(Strictness.LENIENT)
         .serializeNulls()
         .create()
 
@@ -51,6 +53,7 @@ object ViaggiaTrenoApi {
     }
 
     // --- Station autocomplete (pipe-separated format) ---
+    @Keep
     data class StationSuggestion(val name: String, val code: String)
 
     fun autocompleteStation(query: String): List<StationSuggestion> {
@@ -69,6 +72,7 @@ object ViaggiaTrenoApi {
     // --- Train search (pipe-separated) ---
     // referenceDay is the midnight timestamp ViaggiaTreno associates with this specific run —
     // needed by andamentoTreno since the same train number recurs daily.
+    @Keep
     data class TrainSuggestion(val number: String, val originCode: String, val originName: String, val referenceDay: Long = 0L)
 
     fun searchTrain(number: String): List<TrainSuggestion> {
@@ -91,6 +95,7 @@ object ViaggiaTrenoApi {
     }
 
     // --- Departures / Arrivals ---
+    @Keep
     data class StationTrain(
         val numeroTreno: Int = 0,
         val categoriaDescrizione: String = "",
@@ -139,6 +144,7 @@ object ViaggiaTrenoApi {
     }
 
     // --- Train detail ---
+    @Keep
     data class TrainDetail(
         val numeroTreno: Int = 0,
         val categoria: String = "",
@@ -160,6 +166,7 @@ object ViaggiaTrenoApi {
         val operatore: String? = null
     )
 
+    @Keep
     data class TrainStop(
         val stazione: String = "",
         val id: String = "",

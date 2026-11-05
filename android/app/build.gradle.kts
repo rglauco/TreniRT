@@ -39,7 +39,14 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8: drops the unused parts of Compose/OkHttp/Gson and optimizes the rest
+            // (much smaller APK, faster Compose UI). Requested by F-Droid review.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -92,5 +99,6 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("com.google.code.gson:gson:2.10.1")
+    // >= 2.11 ships its own R8 rules (generic signatures, TypeToken subclasses)
+    implementation("com.google.code.gson:gson:2.13.2")
 }
