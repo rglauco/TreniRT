@@ -2,6 +2,11 @@
 
 Tutte le modifiche rilevanti al progetto TreniRT (app Android).
 
+## 2026-11-23 — Coincidenza migliore nella ricerca con cambio
+
+### Corretto
+- **Cambio treno non ottimale**: nella ricerca con destinazione, quando serviva un cambio l'app proponeva la prima coincidenza trovata lungo la linea, non la migliore. Esempio: Preganziol → Conegliano col regionale 16516 proponeva il cambio a S.Trovaso (arrivo 15:18) invece di Treviso Centrale con il REG 3884 (arrivo 14:51). Ora vengono valutate tutte le coincidenze possibili e si sceglie quella che arriva prima a destinazione (per gli arrivi, quella che parte più tardi).
+
 ## 2026-11-05 — APK più leggera con R8
 
 ### Modificato
@@ -251,3 +256,4 @@ Per questo l'accumulo in sessione (fix sopra) aiuta solo se l'app aveva **già v
 - v1.7.0 → v1.7.1: interfaccia in inglese (italiano se il telefono è in italiano), traffico HTTP in chiaro consentito solo verso ViaggiaTreno, descrizione con fonti dati e connessioni di rete, errori della ricerca per numero treno finalmente visibili.
 - v1.7.1 → v1.7.2: fix "errore di caricamento" su ViaggiaTreno (User-Agent da browser per aggirare il blocco Akamai).
 - v1.7.2 → v1.7.3: APK ridotta da 6,5 a 1,7 MB grazie a R8 (richiesto dalla review di F-Droid), Gson aggiornato a 2.13.2.
+- v1.7.3 → v1.7.4: ricerca con cambio treno: viene scelta la coincidenza che arriva prima a destinazione, non la prima trovata.
