@@ -580,6 +580,11 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
         if (originIdx == -1) return null
         val candidateTransferStops = if (listFilter == StationListFilter.DEPARTURES) originStops.drop(originIdx + 1) else originStops.take(originIdx)
 
+        // Evaluate every viable transfer and keep the best one (earliest arrival at the
+        // destination when departing, latest departure when arriving) — not just the first found,
+        // which would favour an early transfer stop even if a later one gets there sooner.
+        var best: TrainConnection? = null
+
         for (transferStop in candidateTransferStops) {
             if (transferStop.id.isEmpty()) continue
             for ((cTrain, cStops) in connectingStops) {
@@ -611,12 +616,17 @@ class TreniViewModel(app: Application) : AndroidViewModel(app) {
                 if (waitMs in MIN_TRANSFER_MS..MAX_TRANSFER_WAIT_MS) {
                     val finalTime = if (listFilter == StationListFilter.DEPARTURES) effectiveArrival(cStops[destIdx]) else effectiveDeparture(cStops[destIdx])
                     if (finalTime > 0) {
-                        return TrainConnection(transferStop.stazione, arrival, departure, cTrain.categoriaDescrizione, cTrain.numeroTreno, finalTime)
+                        val candidate = TrainConnection(transferStop.stazione, arrival, departure, cTrain.categoriaDescrizione, cTrain.numeroTreno, finalTime)
+                        val current = best
+                        val better = current == null ||
+                            if (listFilter == StationListFilter.DEPARTURES) candidate.finalTime < current.finalTime
+                            else candidate.finalTime > current.finalTime
+                        if (better) best = candidate
                     }
                 }
             }
         }
-        return null
+        return best
     }
 
     private fun effectiveArrival(stop: ViaggiaTrenoApi.TrainStop): Long =
